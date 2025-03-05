@@ -1,2 +1,2 @@
-# shuhrat.github.uz
+# shuhrat.github.io
 IBM STUDENT LEARNING HUB 
