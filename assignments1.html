@@ -1,13 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assignments 1</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Assignments</title>
+  <style>
+    :root {
+      --primary-color: #4a6fa5;
+      --secondary-color: #f8f9fa;
+      --accent-color: #6c63ff;
+      --text-color: #333;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: #f5f7fa;
+      background-image: linear-gradient(135deg, #f5f7fa 0%, #e4ecfb 100%);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    
+    .header {
+      text-align: center;
+      padding: 1.5rem 0;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: var(--accent-color);
+      border-radius: 4px;
+    }
+    
+    h1 {
+      color: var(--primary-color);
+      font-size: 2.2rem;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    
+    .assignment-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 10px 20px var(--shadow-color);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      transition: transform 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .assignment-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px var(--shadow-color);
+    }
+    
+    .assignment-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 100%;
+      background: var(--accent-color);
+      border-radius: 2px 0 0 2px;
+    }
+    
+    .assignment-number {
+      display: inline-block;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      margin-bottom: 0.8rem;
+    }
+    
+    .assignment-title {
+      font-size: 1.4rem;
+      color: var(--primary-color);
+      margin-top: 0;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+    
+    .assignment-description {
+      color: #666;
+      margin-bottom: 1.5rem;
+    }
+    
+    .button {
+      display: inline-flex;
+      align-items: center;
+      background-color: var(--accent-color);
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background-color 0.3s, transform 0.3s;
+    }
+    
+    .button:hover {
+      background-color: #5652db;
+      transform: translateY(-2px);
+    }
+    
+    .button svg {
+      margin-right: 0.5rem;
+    }
+    
+    .coming-soon {
+      background-color: rgba(255, 255, 255, 0.8);
+      border: 2px dashed #ddd;
+      border-radius: 10px;
+      padding: 2rem;
+      text-align: center;
+      margin-top: 2rem;
+    }
+    
+    .coming-soon h3 {
+      color: #999;
+      margin-top: 0;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 1.5rem;
+      }
+      
+      .header {
+        padding: 1rem 0;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>Assignments 1</h1>
-    <p>This is the first assignment.</p>
-    <a href="logistics-flowchart-builder.html" target="_blank">View Logistics Flowchart App</a>
+  <div class="container">
+    <header class="header">
+      <h1>My Assignments</h1>
+    </header>
+    
+    <div class="assignments-container">
+      <div class="assignment-card">
+        <span class="assignment-number">Assignment 1</span>
+        <h2 class="assignment-title">Logistics Flowchart</h2>
+        <p class="assignment-description">This is the first assignment. Create a flowchart that illustrates the logistical processes within an organization.</p>
+        <a href="#" class="button">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+          View Logistics Flowchart App
+        </a>
+      </div>
+      
+      <div class="coming-soon">
+        <h3>More assignments coming soon</h3>
+        <p>Check back later for additional coursework and projects.</p>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
