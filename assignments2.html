@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assignment 2 - Logistics Flowchart</title>
+  <style>
+    :root {
+      --primary-color: #4a6fa5;
+      --secondary-color: #f8f9fa;
+      --accent-color: #6c63ff;
+      --text-color: #333;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: #f5f7fa;
+      background-image: linear-gradient(135deg, #f5f7fa 0%, #e4ecfb 100%);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    
+    .header {
+      text-align: center;
+      padding: 1.5rem 0;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: var(--accent-color);
+      border-radius: 4px;
+    }
+    
+    h1 {
+      color: var(--primary-color);
+      font-size: 2.2rem;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    
+    .assignment-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 10px 20px var(--shadow-color);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      transition: transform 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .assignment-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 100%;
+      background: var(--accent-color);
+      border-radius: 2px 0 0 2px;
+    }
+    
+    .assignment-title {
+      font-size: 1.8rem;
+      color: var(--primary-color);
+      margin-top: 0;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+    
+    .assignment-description {
+      color: #666;
+      margin-bottom: 1.5rem;
+      font-size: 1.1rem;
+    }
+    
+    .button {
+      display: inline-flex;
+      align-items: center;
+      background-color: var(--accent-color);
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background-color 0.3s, transform 0.3s;
+      margin-right: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .button:hover {
+      background-color: #5652db;
+      transform: translateY(-2px);
+    }
+    
+    .button svg {
+      margin-right: 0.5rem;
+    }
+    
+    .button.secondary {
+      background-color: var(--primary-color);
+    }
+    
+    .button.secondary:hover {
+      background-color: #3a5a84;
+    }
+    
+    .navigation {
+      margin-top: 2rem;
+      text-align: center;
+    }
+    
+    .nav-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    
+    .nav-link:hover {
+      color: var(--accent-color);
+      text-decoration: underline;
+    }
+    
+    .section-title {
+      font-size: 1.3rem;
+      color: var(--primary-color);
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 0.5rem;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 1.5rem;
+      }
+      
+      .header {
+        padding: 1rem 0;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .assignment-title {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Assignment 2</h1>
+    </header>
+    
+    <div class="assignment-card">
+      <h2 class="assignment-title">Logistics Flowchart</h2>
+      <p class="assignment-description">
+        This assignment focuses on creating a flowchart that illustrates the logistical processes within an organization. 
+        The flowchart builder application allows you to visualize complex logistics workflows and identify optimization opportunities.
+      </p>
+      
+      <h3 class="section-title">Application & Report</h3>
+      <a href="logistics-flowchart-builder.html" class="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+        View Logistics Flowchart App
+      </a>
+      
+      <a href="process-report.pdf" class="button secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        View Process Report
+      </a>
+      
+      <h3 class="section-title">Assignment Details</h3>
+      <p>
+        This assignment required the creation of a flowchart application that helps visualize logistics processes. 
+        The application allows users to create, edit, and save flowcharts that represent various logistics workflows.
+        The process report documents the development process, challenges encountered, and solutions implemented.
+      </p>
+    </div>
+    
+    <div class="navigation">
+      <a href="index.html" class="nav-link">← Back to All Assignments</a>
+    </div>
+  </div>
+</body>
+</html>
