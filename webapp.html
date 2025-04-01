@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procurement Data Analysis Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --background: #f8f9fa;
+            --card: #ffffff;
+            --text: #212529;
+            --border: #e9ecef;
+            --success: #4CAF50;
+            --warning: #ff9800;
+            --error: #f44336;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--background);
+            padding: 20px;
+        }
+        
+        .app-container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            margin-bottom: 2rem;
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            color: var(--text);
+            opacity: 0.8;
+        }
+        
+        .card {
+            background: var(--card);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .card-description {
+            color: var(--text);
+            opacity: 0.8;
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1.5rem 0;
+            transition: border-color 0.3s;
+        }
+        
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--accent);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin: 1.5rem 0;
+        }
+        
+        .file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary);
+            color: white;
+            padding: 0.8rem 1.6rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s, transform 0.2s;
+            text-align: center;
+            font-size: 1rem;
+            margin: 0.5rem;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+        
+        .btn-outlined {
+            background-color: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outlined:hover {
+            background-color: rgba(67, 97, 238, 0.1);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+        }
+        
+        .data-preview {
+            margin-top: 2rem;
+            overflow-x: auto;
+            max-height: 300px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        
+        th {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.8rem 1rem;
+            position: sticky;
+            top: 0;
+        }
+        
+        td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        tr:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .tab {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            position: relative;
+            transition: color 0.3s;
+            color: var(--text);
+        }
+        
+        .tab.active {
+            color: var(--primary);
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary);
+            border-radius: 3px 3px 0 0;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .analysis-card {
+            background: var(--card);
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            height: 100%;
+        }
+        
+        .analysis-title {
+            font-size: 1.2rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin-top: 1rem;
+            position: relative;
+        }
+        
+        .data-pill {
+            display: inline-block;
+            background-color: var(--accent);
+            color: white;
+            padding: 0.2rem 0.8rem;
+            border-radius: 50px;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-info {
+            background-color: rgba(67, 97, 238, 0.1);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .alert-success {
+            background-color: rgba(76, 175, 80, 0.1);
+            border-left: 4px solid var(--success);
+        }
+        
+        .alert-warning {
+            background-color: rgba(255, 152, 0, 0.1);
+            border-left: 4px solid var(--warning);
+        }
+        
+        .loader {
+            display: none;
+            margin: 2rem auto;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(67, 97, 238, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .result-label {
+            font-weight: 600;
+        }
+        
+        .result-value {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .progress-container {
+            width: 100%;
+            background-color: var(--border);
+            border-radius: 10px;
+            margin: 0.5rem 0;
+            height: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 10px;
+            transition: width 0.5s;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>Procurement Data Analysis Tool</h1>
+            <p>Analyze lead time variability and the bullwhip effect in your supply chain</p>
+        </div>
+        
+        <div class="card" id="upload-card">
+            <div class="card-header">
+                <h2 class="card-title">Upload Your Data</h2>
+                <p class="card-description">Upload a CSV file containing your procurement data to begin analysis</p>
+            </div>
+            
+            <div class="upload-area" id="drop-area">
+                <div class="upload-icon">📤</div>
+                <h3>Drag & Drop CSV File Here</h3>
+                <p>or</p>
+                <div class="file-input-wrapper">
+                    <button class="btn">Select File</button>
+                    <input type="file" class="file-input" id="csv-file" accept=".csv">
+                </div>
+                <p>Required columns: Order_ID, Supplier, Order_Date, Expected_Delivery_Date, Actual_Delivery_Date, Product_Category, Transportation_Mode, Supplier_Location, Disruption_Type, Customer_Demand, Order_Quantity</p>
+            </div>
+            
+            <div class="alert alert-info" id="sample-data-alert">
+                <p>Don't have data? <button class="btn btn-outlined" id="use-sample-data">Use Sample Data</button></p>
+            </div>
+            
+            <div class="data-preview hidden" id="data-preview-container">
+                <h3>Data Preview</h3>
+                <div id="data-preview"></div>
+                <div class="alert alert-success hidden" id="valid-data-alert">
+                    <p>✓ Data looks good! All required columns found.</p>
+                </div>
+                <div class="alert alert-warning hidden" id="invalid-data-alert">
+                    <p>⚠️ Some required columns may be missing. Please check your data format.</p>
+                </div>
+                <button class="btn btn-success" id="analyze-btn">Analyze Data</button>
+            </div>
+            
+            <div class="loader" id="loader">
+                <div class="spinner"></div>
+                <p>Analyzing your data...</p>
+            </div>
+        </div>
+        
+        <div class="card hidden" id="results-card">
+            <div class="card-header">
+                <h2 class="card-title">Analysis Results</h2>
+                <p class="card-description">Find insights about lead time variability and the bullwhip effect in your supply chain</p>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="simple-questions">Simple Questions</div>
+                <div class="tab" data-tab="advanced-analysis">Advanced Analysis</div>
+                <div class="tab" data-tab="bullwhip-effect">Bullwhip Effect</div>
+            </div>
+            
+            <div class="tab-content active" id="simple-questions">
+                <div class="grid">
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Q1: Supplier with Highest Average Lead Time</h3>
+                        <div id="q1-result"></div>
+                        <div class="chart-container">
+                            <canvas id="supplier-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Q2: Transportation Mode with Lowest Average Lead Time</h3>
+                        <div id="q2-result"></div>
+                        <div class="chart-container">
+                            <canvas id="transportation-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Q3: Month with Highest Average Delays</h3>
+                        <div id="q3-result"></div>
+                        <div class="chart-container">
+                            <canvas id="month-delay-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Q4: Disruption Type with Longest Average Delay</h3>
+                        <div id="q4-result"></div>
+                        <div class="chart-container">
+                            <canvas id="disruption-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Q5: Product Category with Shortest Average Lead Time</h3>
+                        <div id="q5-result"></div>
+                        <div class="chart-container">
+                            <canvas id="category-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="advanced-analysis">
+                <div class="grid">
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Transportation Mode Contribution to Delays</h3>
+                        <p>This analysis shows which transportation modes contribute most significantly to delays.</p>
+                        <div class="chart-container">
+                            <canvas id="transport-delay-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Seasonal Patterns in Lead Times</h3>
+                        <p>This chart shows average lead times by month to identify seasonal patterns.</p>
+                        <div class="chart-container">
+                            <canvas id="seasonal-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Lead Time Distribution</h3>
+                        <p>Distribution of lead times across all orders.</p>
+                        <div class="chart-container">
+                            <canvas id="lead-time-histogram"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Lead Time by Supplier Location</h3>
+                        <p>How supplier location affects lead time.</p>
+                        <div class="chart-container">
+                            <canvas id="location-lead-time-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="bullwhip-effect">
+                <div class="grid">
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Customer Demand vs. Order Quantities</h3>
+                        <p>This chart compares monthly customer demand with order quantities to identify the bullwhip effect.</p>
+                        <div class="chart-container">
+                            <canvas id="bullwhip-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Variability Correlation</h3>
+                        <p>Correlation between order quantity variability and lead time variability.</p>
+                        <div class="chart-container">
+                            <canvas id="variability-correlation-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Monthly Coefficient of Variation</h3>
+                        <p>Coefficient of variation for demand and orders by month.</p>
+                        <div class="chart-container">
+                            <canvas id="cv-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <h3 class="analysis-title">Bullwhip Effect Analysis</h3>
+                        <div id="bullwhip-analysis-result"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <button class="btn" id="reset-btn">Upload New Data</button>
+                <button class="btn btn-outlined" id="export-results">Export Results</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store the parsed data
+        let parsedData = [];
+        let processedData = {};
+        
+        // DOM Elements
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('csv-file');
+        const dataPreview = document.getElementById('data-preview');
+        const dataPreviewContainer = document.getElementById('data-preview-container');
+        const validDataAlert = document.getElementById('valid-data-alert');
+        const invalidDataAlert = document.getElementById('invalid-data-alert');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const useSampleDataBtn = document.getElementById('use-sample-data');
+        const loader = document.getElementById('loader');
+        const resultsCard = document.getElementById('results-card');
+        const uploadCard = document.getElementById('upload-card');
+        const resetBtn = document.getElementById('reset-btn');
+        const exportResultsBtn = document.getElementById('export-results');
+        const tabs = document.querySelectorAll('.tab');
+        
+        // Create sample data
+        const sampleData = [
+            {
+                "Order_ID": "ORD001",
+                "Supplier": "SupplierA",
+                "Order_Date": "2023/01/05",
+                "Expected_Delivery_Date": "2023/01/15",
+                "Actual_Delivery_Date": "2023/01/18",
+                "Product_Category": "Electronics",
+                "Transportation_Mode": "Air",
+                "Supplier_Location": "Asia",
+                "Disruption_Type": "Weather",
+                "Customer_Demand": "150",
+                "Order_Quantity": "200"
+            },
+            {
+                "Order_ID": "ORD002",
+                "Supplier": "SupplierB",
+                "Order_Date": "2023/01/10",
+                "Expected_Delivery_Date": "2023/01/25",
+                "Actual_Delivery_Date": "2023/01/30",
+                "Product_Category": "Clothing",
+                "Transportation_Mode": "Sea",
+                "Supplier_Location": "Europe",
+                "Disruption_Type": "Customs",
+                "Customer_Demand": "300",
+                "Order_Quantity": "450"
+            },
+            {
+                "Order_ID": "ORD003",
+                "Supplier": "SupplierC",
+                "Order_Date": "2023/01/15",
+                "Expected_Delivery_Date": "2023/01/30",
+                "Actual_Delivery_Date": "2023/02/02",
+                "Product_Category": "Furniture",
+                "Transportation_Mode": "Road",
+                "Supplier_Location": "North America",
+                "Disruption_Type": "None",
+                "Customer_Demand": "75",
+                "Order_Quantity": "100"
+            },
+            {
+                "Order_ID": "ORD004",
+                "Supplier": "SupplierA",
+                "Order_Date": "2023/02/01",
+                "Expected_Delivery_Date": "2023/02/10",
+                "Actual_Delivery_Date": "2023/02/12",
+                "Product_Category": "Electronics",
+                "Transportation_Mode": "Air",
+                "Supplier_Location": "Asia",
+                "Disruption_Type": "None",
+                "Customer_Demand": "200",
+                "Order_Quantity": "250"
+            },
+            {
+                "Order_ID": "ORD005",
+                "Supplier": "SupplierB",
+                "Order_Date": "2023/02/05",
+                "Expected_Delivery_Date": "2023/02/20",
+                "Actual_Delivery_Date": "2023/02/28",
+                "Product_Category": "Clothing",
+                "Transportation_Mode": "Sea",
+                "Supplier_Location": "Europe",
+                "Disruption_Type": "Production",
+                "Customer_Demand": "350",
+                "Order_Quantity": "500"
+            },
+            {
+                "Order_ID": "ORD006",
+                "Supplier": "SupplierC",
+                "Order_Date": "2023/02/15",
+                "Expected_Delivery_Date": "2023/03/01",
+                "Actual_Delivery_Date": "2023/03/05",
+                "Product_Category": "Furniture",
+                "Transportation_Mode": "Road",
+                "Supplier_Location": "North America",
+                "Disruption_Type": "Weather",
+                "Customer_Demand": "100",
+                "Order_Quantity": "150"
+            },
+            {
+                "Order_ID": "ORD007",
+                "Supplier": "SupplierD",
+                "Order_Date": "2023/03/01",
+                "Expected_Delivery_Date": "2023/03/10",
+                "Actual_Delivery_Date": "2023/03/11",
+                "Product_Category": "Food",
+                "Transportation_Mode": "Air",
+                "Supplier_Location": "Asia",
+                "Disruption_Type": "None",
+                "Customer_Demand": "400",
+                "Order_Quantity": "450"
+            },
+            {
+                "Order_ID": "ORD008",
+                "Supplier": "SupplierA",
+                "Order_Date": "2023/03/05",
+                "Expected_Delivery_Date": "2023/03/15",
+                "Actual_Delivery_Date": "2023/03/20",
+                "Product_Category": "Electronics",
+                "Transportation_Mode": "Rail",
+                "Supplier_Location": "Europe",
+                "Disruption_Type": "Customs",
+                "Customer_Demand": "250",
+                "Order_Quantity": "300"
+            },
+            {
+                "Order_ID": "ORD009",
+                "Supplier": "SupplierB",
+                "Order_Date": "2023/03/15",
+                "Expected_Delivery_Date": "2023/03/30",
+                "Actual_Delivery_Date": "2023/04/05",
+                "Product_Category": "Clothing",
+                "Transportation_Mode": "Sea",
+                "Supplier_Location": "Asia",
+                "Disruption_Type": "Production",
+                "Customer_Demand": "300",
+                "Order_Quantity": "450"
+            },
+            {
+                "Order_ID": "ORD010",
+                "Supplier": "SupplierC",
+                "Order_Date": "2023/04/01",
+                "Expected_Delivery_Date": "2023/04/15",
+                "Actual_Delivery_Date": "2023/04/17",
+                "Product_Category": "Furniture",
+                "Transportation_Mode": "Road",
+                "Supplier_Location": "North America",
+                "Disruption_Type": "None",
+                "Customer_Demand": "120",
+                "Order_Quantity": "150"
+            },
+            {
+                "Order_ID": "ORD011",
+                "Supplier": "SupplierD",
+                "Order_Date": "2023/04/05",
+                "Expected_Delivery_Date": "2023/04/15",
+                "Actual_Delivery_Date": "2023/04/15",
+                "Product_Category": "Food",
+                "Transportation_Mode": "Air",
+                "Supplier_Location": "Europe",
+                "Disruption_Type": "None",
+                "Customer_Demand": "350",
+                "Order_Quantity": "375"
+            },
+            {
+                "Order_ID": "ORD012",
+                "Supplier": "SupplierA",
+                "Order_Date": "2023/04/10",
+                "Expected_Delivery_Date": "2023/04/20",
+                "Actual_Delivery_Date": "2023/04/25",
+                "Product_Category": "Electronics",
+                "Transportation_Mode": "Rail",
+                "Supplier_Location": "Asia",
+                "Disruption_Type": "Weather",
+                "Customer_Demand": "280",
+                "Order_Quantity": "350"
+            }
+        ];
+        
+        // Helper function to parse dates
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            
+            // Try different date formats
+            // YYYY/MM/DD format
+            let match = dateStr.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+            if (match) {
+                return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+            }
+            
+            // MM/DD/YYYY format
+            match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (match) {
+                return new Date(parseInt(match[3]), parseInt(match[1]) - 1, parseInt(match[2]));
+            }
+            
+            // ISO format
+            const isoDate = new Date(dateStr);
+            if (!isNaN(isoDate.getTime())) {
+                return isoDate;
+            }
+            
+            return null;
+        }
+        
+        // Calculate days between two dates
+        function daysBetween(date1, date2) {
+            if (!date1 || !date2) return 0;
+            
+            const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+            const diffDays = Math.round(Math.abs((date2 - date1) / oneDay));
+            return diffDays;
+        }
+        
+        // Process the data and calculate metrics
+        function processData(data) {
+            const processed = {
+                leadTimeBySupplier: {},
+                leadTimeByTransportation: {},
+                delayByMonth: {},
+                delayByDisruption: {},
+                leadTimeByCategory: {},
+                monthlyDemand: {},
+                monthlyOrders: {},
+                leadTimeByLocation: {},
+                transportDelayContribution: {},
+                monthlyLeadTime: {},
+                leadTimeDistribution: {},
+                orderVariability: {},
+                leadTimeVariability: {}
+            };
+            
+            // Initialize counters
+            const supplierCount = {};
+            const transportCount = {};
+            const monthCount = {};
+            const disruptionCount = {};
+            const categoryCount = {};
+            const locationCount = {};
+            
+            data.forEach(row => {
+                if (!row.Order_Date || !row.Actual_Delivery_Date) return;
+                
+                try {
+                    // Parse dates
+                    const orderDate = parseDate(row.Order_Date);
+                    const expectedDate = parseDate(row.Expected_Delivery_Date);
+                    const actualDate = parseDate(row.Actual_Delivery_Date);
+                    
+                    if (!orderDate || !expectedDate || !actualDate) {
+                        console.warn("Could not parse dates for row:", row);
+                        return;
+                    }
+                    
+                    // Calculate lead time and delay
+                    const leadTime = daysBetween(orderDate, actualDate);
+                    const delay = daysBetween(expectedDate, actualDate);
+                    
+                    // Get month and year
+                    const month = orderDate.getMonth(); // 0-11
+                    const year = orderDate.getFullYear();
+                    const monthYear = `${month + 1}/${year}`;
+                    
+                    // Add lead time data by supplier
+                    if (!processed.leadTimeBySupplier[row.Supplier]) {
+                        processed.leadTimeBySupplier[row.Supplier] = 0;
+                        supplierCount[row.Supplier] = 0;
+                    }
+                    processed.leadTimeBySupplier[row.Supplier] += leadTime;
+                    supplierCount[row.Supplier]++;
+                    
+                    // Add lead time data by transportation mode
+                    if (!processed.leadTimeByTransportation[row.Transportation_Mode]) {
+                        processed.leadTimeByTransportation[row.Transportation_Mode] = 0;
+                        transportCount[row.Transportation_Mode] = 0;
+                    }
+                    processed.leadTimeByTransportation[row.Transportation_Mode] += leadTime;
+                    transportCount[row.Transportation_Mode]++;
+                    
+                    // Add delay data by month
+                    const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug
