@@ -549,6 +549,14 @@
         // Global variables to store the parsed data
         let parsedData = [];
         let processedData = {};
+        let charts = {};
+        
+        // Required columns for validation
+        const requiredColumns = [
+            'Order_ID', 'Supplier', 'Order_Date', 'Expected_Delivery_Date', 
+            'Actual_Delivery_Date', 'Product_Category', 'Transportation_Mode', 
+            'Supplier_Location', 'Disruption_Type', 'Customer_Demand', 'Order_Quantity'
+        ];
         
         // DOM Elements
         const dropArea = document.getElementById('drop-area');
@@ -725,106 +733,107 @@
                 "Order_Quantity": "350"
             }
         ];
-        
-        // Helper function to parse dates
-        function parseDate(dateStr) {
-            if (!dateStr) return null;
-            
-            // Try different date formats
-            // YYYY/MM/DD format
-            let match = dateStr.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
-            if (match) {
-                return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
-            }
-            
-            // MM/DD/YYYY format
-            match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-            if (match) {
-                return new Date(parseInt(match[3]), parseInt(match[1]) - 1, parseInt(match[2]));
-            }
-            
-            // ISO format
-            const isoDate = new Date(dateStr);
-            if (!isNaN(isoDate.getTime())) {
-                return isoDate;
-            }
-            
-            return null;
-        }
-        
-        // Calculate days between two dates
-        function daysBetween(date1, date2) {
-            if (!date1 || !date2) return 0;
-            
-            const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-            const diffDays = Math.round(Math.abs((date2 - date1) / oneDay));
-            return diffDays;
-        }
-        
-        // Process the data and calculate metrics
-        function processData(data) {
-            const processed = {
-                leadTimeBySupplier: {},
-                leadTimeByTransportation: {},
-                delayByMonth: {},
-                delayByDisruption: {},
-                leadTimeByCategory: {},
-                monthlyDemand: {},
-                monthlyOrders: {},
-                leadTimeByLocation: {},
-                transportDelayContribution: {},
-                monthlyLeadTime: {},
-                leadTimeDistribution: {},
-                orderVariability: {},
-                leadTimeVariability: {}
-            };
-            
-            // Initialize counters
-            const supplierCount = {};
-            const transportCount = {};
-            const monthCount = {};
-            const disruptionCount = {};
-            const categoryCount = {};
-            const locationCount = {};
-            
-            data.forEach(row => {
-                if (!row.Order_Date || !row.Actual_Delivery_Date) return;
+
+        // Initialize the application when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners for file input
+            dropArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                dropArea.classList.add('dragover');
+            });
+
+            dropArea.addEventListener('dragleave', function() {
+                dropArea.classList.remove('dragover');
+            });
+
+            dropArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                dropArea.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file && file.type === 'text/csv') {
+                    handleFileUpload(file);
+                }
+            });
+
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length > 0) {
+                    handleFileUpload(fileInput.files[0]);
+                }
+            });
+
+            // Use sample data button
+            useSampleDataBtn.addEventListener('click', function() {
+                parsedData = [...sampleData]; // Create a copy of sample data
+                showDataPreview(parsedData);
+                dataPreviewContainer.classList.remove('hidden');
+                validateData(parsedData);
+            });
+
+            // Analyze button
+            analyzeBtn.addEventListener('click', function() {
+                if (parsedData.length > 0) {
+                    dataPreviewContainer.classList.add('hidden');
+                    loader.style.display = 'block';
+                    
+                    // Simulate analysis delay for UX
+                    setTimeout(function() {
+                        processedData = processData(parsedData);
+                        loader.style.display = 'none';
+                        uploadCard.classList.add('hidden');
+                        resultsCard.classList.remove('hidden');
+                        createCharts();
+                    }, 1500);
+                }
+            });
+
+            // Reset button
+            resetBtn.addEventListener('click', function() {
+                resultsCard.classList.add('hidden');
+                uploadCard.classList.remove('hidden');
+                dataPreviewContainer.classList.add('hidden');
+                fileInput.value = '';
+                parsedData = [];
                 
-                try {
-                    // Parse dates
-                    const orderDate = parseDate(row.Order_Date);
-                    const expectedDate = parseDate(row.Expected_Delivery_Date);
-                    const actualDate = parseDate(row.Actual_Delivery_Date);
+                // Destroy all charts to prevent memory leaks
+                Object.values(charts).forEach(chart => {
+                    if (chart) chart.destroy();
+                });
+                charts = {};
+            });
+
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
                     
-                    if (!orderDate || !expectedDate || !actualDate) {
-                        console.warn("Could not parse dates for row:", row);
-                        return;
+                    this.classList.add('active');
+                    const tabContent = document.getElementById(this.getAttribute('data-tab'));
+                    if (tabContent) {
+                        tabContent.classList.add('active');
                     }
-                    
-                    // Calculate lead time and delay
-                    const leadTime = daysBetween(orderDate, actualDate);
-                    const delay = daysBetween(expectedDate, actualDate);
-                    
-                    // Get month and year
-                    const month = orderDate.getMonth(); // 0-11
-                    const year = orderDate.getFullYear();
-                    const monthYear = `${month + 1}/${year}`;
-                    
-                    // Add lead time data by supplier
-                    if (!processed.leadTimeBySupplier[row.Supplier]) {
-                        processed.leadTimeBySupplier[row.Supplier] = 0;
-                        supplierCount[row.Supplier] = 0;
+                });
+            });
+
+            // Export results button
+            exportResultsBtn.addEventListener('click', function() {
+                exportResults();
+            });
+        });
+
+        // Handle CSV file upload
+        function handleFileUpload(file) {
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.data && results.data.length > 0) {
+                        console.log("Parsed CSV data:", results);
+                        parsedData = results.data;
+                        showDataPreview(results.data);
+                        dataPreviewContainer.classList.remove('hidden');
+                        validateData(results.data);
+                    } else {
+                        alert("Error parsing CSV file. Please check the file format.");
                     }
-                    processed.leadTimeBySupplier[row.Supplier] += leadTime;
-                    supplierCount[row.Supplier]++;
-                    
-                    // Add lead time data by transportation mode
-                    if (!processed.leadTimeByTransportation[row.Transportation_Mode]) {
-                        processed.leadTimeByTransportation[row.Transportation_Mode] = 0;
-                        transportCount[row.Transportation_Mode] = 0;
-                    }
-                    processed.leadTimeByTransportation[row.Transportation_Mode] += leadTime;
-                    transportCount[row.Transportation_Mode]++;
-                    
-                    // Add delay data by month
-                    const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug
