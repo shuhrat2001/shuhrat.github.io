@@ -3,1067 +3,616 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Procurement Analysis Dashboard</title>
+    <title>Simple Procurement Data Analyzer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <style>
-        :root {
-            --primary: #4361ee;
-            --secondary: #3f37c9;
-            --accent: #4895ef;
-            --background: #f8f9fa;
-            --card: #ffffff;
-            --text: #212529;
-            --border: #e9ecef;
-            --success: #4CAF50;
-            --warning: #ff9800;
-            --error: #f44336;
-            --purple: #6c63ff;
-            --light-blue: #e3f2fd;
-        }
-        
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', 'SF Pro Text', -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: Arial, sans-serif;
         }
         
         body {
-            color: var(--text);
-            background-color: var(--background);
+            background-color: #f5f7fa;
             padding: 20px;
-            line-height: 1.6;
+            margin: 0;
         }
         
-        .app-container {
-            max-width: 1280px;
+        .container {
+            max-width: 1200px;
             margin: 0 auto;
         }
         
         .header {
-            margin-bottom: 2rem;
-            text-align: center;
-            padding: 1rem;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            background-color: #4a6de5;
             color: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-        }
-        
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
         }
         
         .card {
-            background: var(--card);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            padding: 2rem;
-            margin-bottom: 2rem;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-        }
-        
-        .card-header {
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1rem;
-        }
-        
-        .card-title {
-            font-size: 1.5rem;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-        
-        .card-description {
-            color: var(--text);
-            opacity: 0.8;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
         }
         
         .upload-area {
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 2rem;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
             text-align: center;
-            margin: 1.5rem 0;
-            transition: all 0.3s;
-            background-color: var(--light-blue);
-        }
-        
-        .upload-area:hover, .upload-area.dragover {
-            border-color: var(--accent);
-            background-color: rgba(67, 97, 238, 0.08);
+            margin: 20px 0;
+            background-color: #f9f9f9;
             cursor: pointer;
         }
         
-        .upload-icon {
-            font-size: 3rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
-        
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            margin: 1.5rem 0;
-        }
-        
-        .file-input {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            cursor: pointer;
-            width: 100%;
-            height: 100%;
+        .upload-area:hover {
+            border-color: #4a6de5;
+            background-color: #f0f4ff;
         }
         
         .btn {
-            display: inline-block;
-            background-color: var(--primary);
+            background-color: #4a6de5;
             color: white;
-            padding: 0.8rem 1.6rem;
-            border-radius: 50px;
-            font-weight: 600;
-            cursor: pointer;
             border: none;
-            transition: all 0.3s;
-            text-align: center;
-            font-size: 1rem;
-            margin: 0.5rem;
-            box-shadow: 0 4px 8px rgba(67, 97, 238, 0.2);
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
         }
         
         .btn:hover {
-            background-color: var(--secondary);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(67, 97, 238, 0.3);
-        }
-        
-        .btn-outlined {
-            background-color: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-        }
-        
-        .btn-outlined:hover {
-            background-color: rgba(67, 97, 238, 0.1);
-        }
-        
-        .btn-success {
-            background-color: var(--success);
-            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
-        }
-        
-        .btn-success:hover {
-            background-color: #43a047;
-            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3);
-        }
-        
-        .data-preview {
-            margin-top: 2rem;
-            overflow-x: auto;
-            max-height: 300px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background-color: white;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-        
-        th {
-            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            padding: 0.8rem 1rem;
-            position: sticky;
-            top: 0;
-            font-weight: 600;
-        }
-        
-        td {
-            padding: 0.8rem 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        tr:nth-child(even) {
-            background-color: rgba(0, 0, 0, 0.02);
-        }
-        
-        tr:hover {
-            background-color: rgba(67, 97, 238, 0.05);
-        }
-        
-        .question-input {
-            width: 100%;
-            padding: 1rem;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            font-size: 1rem;
-            margin-bottom: 1rem;
-            transition: all 0.3s;
-        }
-        
-        .question-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-        }
-        
-        .chart-container {
-            height: 400px;
-            margin-top: 1.5rem;
-            position: relative;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            background-color: white;
-        }
-        
-        .result-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border-left: 4px solid var(--primary);
-        }
-        
-        .result-title {
-            font-size: 1.2rem;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-        
-        .result-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--secondary);
-            margin-bottom: 0.5rem;
-        }
-        
-        .result-description {
-            color: var(--text);
-            opacity: 0.8;
-        }
-        
-        .alert {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-weight: 500;
-        }
-        
-        .alert-info {
-            background-color: rgba(67, 97, 238, 0.1);
-            border-left: 4px solid var(--primary);
-            color: var(--primary);
-        }
-        
-        .alert-success {
-            background-color: rgba(76, 175, 80, 0.1);
-            border-left: 4px solid var(--success);
-            color: var(--success);
-        }
-        
-        .alert-warning {
-            background-color: rgba(255, 152, 0, 0.1);
-            border-left: 4px solid var(--warning);
-            color: var(--warning);
-        }
-        
-        .loader {
-            display: none;
-            margin: 2rem auto;
-            text-align: center;
-        }
-        
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(67, 97, 238, 0.1);
-            border-radius: 50%;
-            border-top-color: var(--primary);
-            animation: spin 1s ease-in-out infinite;
-            margin: 0 auto 1rem;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+            background-color: #3d5fd2;
         }
         
         .hidden {
             display: none;
         }
         
-        .fade-in {
-            animation: fadeIn 0.5s;
+        .result-card {
+            background-color: #f0f4ff;
+            border-left: 4px solid #4a6de5;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
         }
         
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .result-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 18px;
         }
         
-        .question-suggestions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin: 1rem 0;
+        .result-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3d5fd2;
+            margin-bottom: 10px;
         }
         
-        .question-chip {
-            background-color: rgba(67, 97, 238, 0.1);
-            color: var(--primary);
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
         }
         
-        .question-chip:hover {
-            background-color: rgba(67, 97, 238, 0.2);
-            transform: translateY(-2px);
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
         }
         
-        .answers-container {
-            margin-top: 2rem;
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
         }
         
-        .answer-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            transition: all 0.3s;
-            border-left: 4px solid var(--primary);
+        th {
+            background-color: #f0f4ff;
+            font-weight: bold;
         }
         
-        .answer-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        .spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(74, 109, 229, 0.3);
+            border-radius: 50%;
+            border-top-color: #4a6de5;
+            animation: spin 1s ease-in-out infinite;
         }
         
-        .answer-question {
-            font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-            font-size: 1.1rem;
-        }
-        
-        .answer-text {
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-        }
-        
-        .answer-highlight {
-            font-weight: 700;
-            color: var(--secondary);
-        }
-        
-        @media (max-width: 768px) {
-            .card {
-                padding: 1.5rem;
-            }
-            
-            .result-value {
-                font-size: 1.5rem;
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
             }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
+    <div class="container">
         <div class="header">
-            <h1>Interactive Procurement Analysis Dashboard</h1>
-            <p>Upload your procurement data and ask questions to get instant insights</p>
+            <h1>Procurement Data Analyzer</h1>
+            <p>Upload your CSV file to analyze lead times and delays</p>
         </div>
         
         <div class="card" id="upload-card">
-            <div class="card-header">
-                <h2 class="card-title">Upload Your Data</h2>
-                <p class="card-description">Upload a CSV file containing your procurement data to begin analysis</p>
-            </div>
+            <h2>Upload Your Data</h2>
+            <p>Upload a CSV file containing procurement data with the following columns: Order_ID, Supplier, Order_Date, Expected_Delivery_Date, Actual_Delivery_Date, Product_Category, Transportation_Mode, Supplier_Location, Disruption_Type, Customer_Demand, Order_Quantity</p>
             
             <div class="upload-area" id="drop-area">
-                <div class="upload-icon">📤</div>
-                <h3>Drag & Drop CSV File Here</h3>
+                <p>Drag & Drop CSV File Here</p>
                 <p>or</p>
-                <div class="file-input-wrapper">
-                    <button class="btn">Select File</button>
-                    <input type="file" class="file-input" id="csv-file" accept=".csv">
-                </div>
-                <p>Required columns: Order_ID, Supplier, Order_Date, Expected_Delivery_Date, Actual_Delivery_Date, Product_Category, Transportation_Mode, Supplier_Location, Disruption_Type, Customer_Demand, Order_Quantity</p>
+                <input type="file" id="file-input" accept=".csv" style="display: none;">
+                <button class="btn" onclick="document.getElementById('file-input').click()">Select File</button>
+                <p id="file-name"></p>
             </div>
             
-            <div class="alert alert-info" id="sample-data-alert">
-                <p>Don't have data? <button class="btn btn-outlined" id="use-sample-data">Use Sample Data</button></p>
-            </div>
-            
-            <div class="data-preview hidden" id="data-preview-container">
-                <h3>Data Preview</h3>
-                <div id="data-preview"></div>
-                <div class="alert alert-success hidden" id="valid-data-alert">
-                    <p>✓ Data looks good! All required columns found.</p>
+            <div class="text-center">
+                <button class="btn" id="analyze-btn">Analyze Data</button>
+                <div id="loader" class="hidden" style="text-align: center; margin-top: 20px;">
+                    <div class="spinner"></div>
+                    <p>Analyzing your data...</p>
                 </div>
-                <div class="alert alert-warning hidden" id="invalid-data-alert">
-                    <p>⚠️ Some required columns may be missing. Please check your data format.</p>
-                </div>
-                <button class="btn btn-success" id="analyze-btn">Analyze Data</button>
-            </div>
-            
-            <div class="loader" id="loader">
-                <div class="spinner"></div>
-                <p>Analyzing your data...</p>
             </div>
         </div>
         
-        <div class="card hidden" id="question-card">
-            <div class="card-header">
-                <h2 class="card-title">Ask Questions About Your Data</h2>
-                <p class="card-description">Type your question or select from common questions below</p>
+        <div class="card hidden" id="results-card">
+            <h2>Analysis Results</h2>
+            
+            <div class="result-card">
+                <div class="result-title">Q1: Which supplier has the highest average lead time?</div>
+                <div class="result-value" id="q1-result"></div>
+                <div id="q1-details"></div>
+                <div class="chart-container">
+                    <canvas id="supplier-chart"></canvas>
+                </div>
             </div>
             
-            <div class="question-suggestions">
-                <div class="question-chip" data-question="Which supplier has the highest average lead time?">Supplier with highest lead time?</div>
-                <div class="question-chip" data-question="What transportation mode has the lowest average lead time?">Transportation with lowest lead time?</div>
-                <div class="question-chip" data-question="Which month shows the highest average delays in delivery?">Month with highest delays?</div>
-                <div class="question-chip" data-question="What type of disruption leads to the longest average delay?">Worst disruption type?</div>
-                <div class="question-chip" data-question="Which product category experiences the shortest average lead time?">Category with shortest lead time?</div>
+            <div class="result-card">
+                <div class="result-title">Q2: What transportation mode has the lowest average lead time?</div>
+                <div class="result-value" id="q2-result"></div>
+                <div id="q2-details"></div>
+                <div class="chart-container">
+                    <canvas id="transport-chart"></canvas>
+                </div>
             </div>
             
-            <input type="text" class="question-input" id="question-input" placeholder="Type your question here...">
-            <button class="btn" id="ask-question-btn">Get Answer</button>
-            
-            <div class="answers-container" id="answers-container">
-                <!-- Answers will be inserted here -->
+            <div class="result-card">
+                <div class="result-title">Q3: Which month shows the highest average delays in delivery?</div>
+                <div class="result-value" id="q3-result"></div>
+                <div id="q3-details"></div>
+                <div class="chart-container">
+                    <canvas id="month-chart"></canvas>
+                </div>
             </div>
+            
+            <div class="result-card">
+                <div class="result-title">Q4: What type of disruption leads to the longest average delay?</div>
+                <div class="result-value" id="q4-result"></div>
+                <div id="q4-details"></div>
+                <div class="chart-container">
+                    <canvas id="disruption-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="result-card">
+                <div class="result-title">Q5: Which product category experiences the shortest average lead time?</div>
+                <div class="result-value" id="q5-result"></div>
+                <div id="q5-details"></div>
+                <div class="chart-container">
+                    <canvas id="category-chart"></canvas>
+                </div>
+            </div>
+            
+            <button class="btn" onclick="document.getElementById('upload-card').classList.remove('hidden'); document.getElementById('results-card').classList.add('hidden');">Upload New Data</button>
         </div>
     </div>
 
     <script>
-        // Global variables to store the parsed data
-        let parsedData = [];
-        let processedData = {};
-        let charts = {};
-        
-        // Required columns for validation
-        const requiredColumns = [
-            'Order_ID', 'Supplier', 'Order_Date', 'Expected_Delivery_Date', 
-            'Actual_Delivery_Date', 'Product_Category', 'Transportation_Mode', 
-            'Supplier_Location', 'Disruption_Type', 'Customer_Demand', 'Order_Quantity'
-        ];
-        
         // DOM Elements
         const dropArea = document.getElementById('drop-area');
-        const fileInput = document.getElementById('csv-file');
-        const dataPreview = document.getElementById('data-preview');
-        const dataPreviewContainer = document.getElementById('data-preview-container');
-        const validDataAlert = document.getElementById('valid-data-alert');
-        const invalidDataAlert = document.getElementById('invalid-data-alert');
+        const fileInput = document.getElementById('file-input');
+        const fileName = document.getElementById('file-name');
         const analyzeBtn = document.getElementById('analyze-btn');
-        const useSampleDataBtn = document.getElementById('use-sample-data');
         const loader = document.getElementById('loader');
         const uploadCard = document.getElementById('upload-card');
-        const questionCard = document.getElementById('question-card');
-        const questionInput = document.getElementById('question-input');
-        const askQuestionBtn = document.getElementById('ask-question-btn');
-        const answersContainer = document.getElementById('answers-container');
-        const questionChips = document.querySelectorAll('.question-chip');
+        const resultsCard = document.getElementById('results-card');
         
-        // Create sample data
-        const sampleData = [
-            {
-                "Order_ID": "ORD001",
-                "Supplier": "SupplierA",
-                "Order_Date": "2023/01/05",
-                "Expected_Delivery_Date": "2023/01/15",
-                "Actual_Delivery_Date": "2023/01/18",
-                "Product_Category": "Electronics",
-                "Transportation_Mode": "Air",
-                "Supplier_Location": "Asia",
-                "Disruption_Type": "Weather",
-                "Customer_Demand": "150",
-                "Order_Quantity": "200"
-            },
-            {
-                "Order_ID": "ORD002",
-                "Supplier": "SupplierB",
-                "Order_Date": "2023/01/10",
-                "Expected_Delivery_Date": "2023/01/25",
-                "Actual_Delivery_Date": "2023/01/30",
-                "Product_Category": "Clothing",
-                "Transportation_Mode": "Sea",
-                "Supplier_Location": "Europe",
-                "Disruption_Type": "Customs",
-                "Customer_Demand": "300",
-                "Order_Quantity": "450"
-            },
-            {
-                "Order_ID": "ORD003",
-                "Supplier": "SupplierC",
-                "Order_Date": "2023/01/15",
-                "Expected_Delivery_Date": "2023/01/30",
-                "Actual_Delivery_Date": "2023/02/02",
-                "Product_Category": "Furniture",
-                "Transportation_Mode": "Road",
-                "Supplier_Location": "North America",
-                "Disruption_Type": "None",
-                "Customer_Demand": "75",
-                "Order_Quantity": "100"
-            },
-            {
-                "Order_ID": "ORD004",
-                "Supplier": "SupplierA",
-                "Order_Date": "2023/02/01",
-                "Expected_Delivery_Date": "2023/02/10",
-                "Actual_Delivery_Date": "2023/02/12",
-                "Product_Category": "Electronics",
-                "Transportation_Mode": "Air",
-                "Supplier_Location": "Asia",
-                "Disruption_Type": "None",
-                "Customer_Demand": "200",
-                "Order_Quantity": "250"
-            },
-            {
-                "Order_ID": "ORD005",
-                "Supplier": "SupplierB",
-                "Order_Date": "2023/02/05",
-                "Expected_Delivery_Date": "2023/02/20",
-                "Actual_Delivery_Date": "2023/02/28",
-                "Product_Category": "Clothing",
-                "Transportation_Mode": "Sea",
-                "Supplier_Location": "Europe",
-                "Disruption_Type": "Production",
-                "Customer_Demand": "350",
-                "Order_Quantity": "500"
-            },
-            {
-                "Order_ID": "ORD006",
-                "Supplier": "SupplierC",
-                "Order_Date": "2023/02/15",
-                "Expected_Delivery_Date": "2023/03/01",
-                "Actual_Delivery_Date": "2023/03/05",
-                "Product_Category": "Furniture",
-                "Transportation_Mode": "Road",
-                "Supplier_Location": "North America",
-                "Disruption_Type": "Weather",
-                "Customer_Demand": "100",
-                "Order_Quantity": "150"
-            },
-            {
-                "Order_ID": "ORD007",
-                "Supplier": "SupplierD",
-                "Order_Date": "2023/03/01",
-                "Expected_Delivery_Date": "2023/03/10",
-                "Actual_Delivery_Date": "2023/03/11",
-                "Product_Category": "Food",
-                "Transportation_Mode": "Air",
-                "Supplier_Location": "Asia",
-                "Disruption_Type": "None",
-                "Customer_Demand": "400",
-                "Order_Quantity": "450"
-            },
-            {
-                "Order_ID": "ORD008",
-                "Supplier": "SupplierA",
-                "Order_Date": "2023/03/05",
-                "Expected_Delivery_Date": "2023/03/15",
-                "Actual_Delivery_Date": "2023/03/20",
-                "Product_Category": "Electronics",
-                "Transportation_Mode": "Rail",
-                "Supplier_Location": "Europe",
-                "Disruption_Type": "Customs",
-                "Customer_Demand": "250",
-                "Order_Quantity": "300"
-            },
-            {
-                "Order_ID": "ORD009",
-                "Supplier": "SupplierB",
-                "Order_Date": "2023/03/15",
-                "Expected_Delivery_Date": "2023/03/30",
-                "Actual_Delivery_Date": "2023/04/05",
-                "Product_Category": "Clothing",
-                "Transportation_Mode": "Sea",
-                "Supplier_Location": "Asia",
-                "Disruption_Type": "Production",
-                "Customer_Demand": "300",
-                "Order_Quantity": "450"
-            },
-            {
-                "Order_ID": "ORD010",
-                "Supplier": "SupplierC",
-                "Order_Date": "2023/04/01",
-                "Expected_Delivery_Date": "2023/04/15",
-                "Actual_Delivery_Date": "2023/04/17",
-                "Product_Category": "Furniture",
-                "Transportation_Mode": "Road",
-                "Supplier_Location": "North America",
-                "Disruption_Type": "None",
-                "Customer_Demand": "120",
-                "Order_Quantity": "150"
-            },
-            {
-                "Order_ID": "ORD011",
-                "Supplier": "SupplierD",
-                "Order_Date": "2023/04/05",
-                "Expected_Delivery_Date": "2023/04/15",
-                "Actual_Delivery_Date": "2023/04/15",
-                "Product_Category": "Food",
-                "Transportation_Mode": "Air",
-                "Supplier_Location": "Europe",
-                "Disruption_Type": "None",
-                "Customer_Demand": "350",
-                "Order_Quantity": "375"
-            },
-            {
-                "Order_ID": "ORD012",
-                "Supplier": "SupplierA",
-                "Order_Date": "2023/04/10",
-                "Expected_Delivery_Date": "2023/04/20",
-                "Actual_Delivery_Date": "2023/04/25",
-                "Product_Category": "Electronics",
-                "Transportation_Mode": "Rail",
-                "Supplier_Location": "Asia",
-                "Disruption_Type": "Weather",
-                "Customer_Demand": "280",
-                "Order_Quantity": "350"
-            }
-        ];
-
-        // Initialize the application when the DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Add event listeners for file input
-            dropArea.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                dropArea.classList.add('dragover');
-            });
-
-            dropArea.addEventListener('dragleave', function() {
-                dropArea.classList.remove('dragover');
-            });
-
-            dropArea.addEventListener('drop', function(e) {
-                e.preventDefault();
-                dropArea.classList.remove('dragover');
-                const file = e.dataTransfer.files[0];
-                if (file && file.type === 'text/csv') {
-                    handleFileUpload(file);
-                }
-            });
-
-            fileInput.addEventListener('change', function() {
-                if (fileInput.files.length > 0) {
-                    handleFileUpload(fileInput.files[0]);
-                }
-            });
-
-            // Use sample data button
-            useSampleDataBtn.addEventListener('click', function() {
-                parsedData = JSON.parse(JSON.stringify(sampleData)); // Create a deep copy of sample data
-                showDataPreview(parsedData);
-                dataPreviewContainer.classList.remove('hidden');
-                validateData(parsedData);
-            });
-
-            // Analyze button
-            analyzeBtn.addEventListener('click', function() {
-                if (parsedData.length > 0) {
-                    dataPreviewContainer.classList.add('hidden');
-                    loader.style.display = 'block';
-                    
-                    // Process data for analysis
-                    setTimeout(function() {
-                        processedData = processData(parsedData);
-                        loader.style.display = 'none';
-                        uploadCard.classList.add('hidden');
-                        questionCard.classList.remove('hidden');
-                    }, 1000);
-                }
-            });
-
-            // Question chip event listeners
-            questionChips.forEach(chip => {
-                chip.addEventListener('click', function() {
-                    const question = this.getAttribute('data-question');
-                    questionInput.value = question;
-                    askQuestion(question);
-                });
-            });
-
-            // Ask question button
-            askQuestionBtn.addEventListener('click', function() {
-                const question = questionInput.value.trim();
-                if (question) {
-                    askQuestion(question);
-                }
-            });
-
-            // Enter key in question input
-            questionInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    const question = questionInput.value.trim();
-                    if (question) {
-                        askQuestion(question);
-                    }
-                }
-            });
+        // Global variables
+        let csvData = null;
+        let processedData = null;
+        let charts = {};
+        
+        // Event listeners
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.style.borderColor = '#4a6de5';
+            dropArea.style.backgroundColor = '#f0f4ff';
         });
-
-        // Helper function to parse dates
-        function parseDate(dateStr) {
-            if (!dateStr) return null;
-            const parts = dateStr.split('/');
-            return new Date(parts[0], parts[1] - 1, parts[2]);
-        }
-
-        // Handle CSV file upload
-        function handleFileUpload(file) {
-            Papa.parse(file, {
-                header: true,
-                dynamicTyping: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    if (results.data && results.data.length > 0) {
-                        console.log("Parsed CSV data:", results);
-                        parsedData = results.data;
-                        showDataPreview(results.data);
-                        dataPreviewContainer.classList.remove('hidden');
-                        validateData(results.data);
-                    } else {
-                        alert("Error parsing CSV file. Please check the file format.");
-                    }
-                },
-                error: function(error) {
-                    console.error("Error parsing CSV:", error);
-                    alert("Error parsing CSV file: " + error.message);
-                }
-            });
-        }
-
-        // Show data preview table
-        function showDataPreview(data) {
-            const previewData = data.slice(0, 5); // Show first 5 rows
-            
-            let tableHTML = '<table><thead><tr>';
-            const columns = Object.keys(previewData[0]);
-            
-            // Create table headers
-            columns.forEach(column => {
-                tableHTML += `<th>${column}</th>`;
-            });
-            
-            tableHTML += '</tr></thead><tbody>';
-            
-            // Create table rows
-            previewData.forEach(row => {
-                tableHTML += '<tr>';
-                columns.forEach(column => {
-                    tableHTML += `<td>${row[column] !== null ? row[column] : ''}</td>`;
-                });
-                tableHTML += '</tr>';
-            });
-            
-            tableHTML += '</tbody></table>';
-            dataPreview.innerHTML = tableHTML;
-        }
-
-        // Validate data for required columns
-        function validateData(data) {
-            if (data.length === 0) return;
-            
-            const columns = Object.keys(data[0]);
-            const missingColumns = requiredColumns.filter(col => !columns.includes(col));
-            
-            if (missingColumns.length === 0) {
-                validDataAlert.classList.remove('hidden');
-                invalidDataAlert.classList.add('hidden');
-            } else {
-                validDataAlert.classList.add('hidden');
-                invalidDataAlert.classList.remove('hidden');
-                console.warn("Missing columns:", missingColumns);
-            }
-        }
-
-        // Process data for analysis
-        function processData(data) {
-            // Parse dates and calculate metrics
-            const processed = data.map(order => {
-                const orderDate = parseDate(order.Order_Date);
-                const expectedDeliveryDate = parseDate(order.Expected_Delivery_Date);
-                const actualDeliveryDate = parseDate(order.Actual_Delivery_Date);
-                
-                // Calculate lead time (actual delivery - order date) in days
-                const leadTime = Math.round((actualDeliveryDate - orderDate) / (1000 * 60 * 60 * 24));
-                
-                // Calculate delay (actual delivery - expected delivery) in days
-                const delay = Math.round((actualDeliveryDate - expectedDeliveryDate) /  // Calculate delay (actual delivery - expected delivery) in days
-                const delay = Math.round((actualDeliveryDate - expectedDeliveryDate) / (1000 * 60 * 60 * 24));
-                
-                // Extract month from order date for monthly analysis
-                const month = orderDate.getMonth(); // 0-based (0 = January)
-                const monthName = new Date(0, month).toLocaleString('default', { month: 'long' });
-                
-                // Convert string values to numbers where needed
-                const customerDemand = parseFloat(order.Customer_Demand) || 0;
-                const orderQuantity = parseFloat(order.Order_Quantity) || 0;
-                
-                return {
-                    ...order,
-                    leadTime,
-                    delay,
-                    month,
-                    monthName,
-                    customerDemand,
-                    orderQuantity
-                };
-            });
-            
-            // Prepare summary metrics
-            const supplierLeadTimes = {};
-            const transportLeadTimes = {};
-            const monthDelays = {};
-            const disruptionDelays = {};
-            const categoryLeadTimes = {};
-            
-            processed.forEach(order => {
-                // Supplier lead times
-                if (!supplierLeadTimes[order.Supplier]) {
-                    supplierLeadTimes[order.Supplier] = { totalLeadTime: 0, count: 0 };
-                }
-                supplierLeadTimes[order.Supplier].totalLeadTime += order.leadTime;
-                supplierLeadTimes[order.Supplier].count += 1;
-                
-                // Transportation mode lead times
-                if (!transportLeadTimes[order.Transportation_Mode]) {
-                    transportLeadTimes[order.Transportation_Mode] = { totalLeadTime: 0, count: 0 };
-                }
-                transportLeadTimes[order.Transportation_Mode].totalLeadTime += order.leadTime;
-                transportLeadTimes[order.Transportation_Mode].count += 1;
-                
-                // Monthly delays
-                if (!monthDelays[order.monthName]) {
-                    monthDelays[order.monthName] = { totalDelay: 0, count: 0, month: order.month };
-                }
-                monthDelays[order.monthName].totalDelay += order.delay;
-                monthDelays[order.monthName].count += 1;
-                
-                // Disruption type delays
-                if (!disruptionDelays[order.Disruption_Type]) {
-                    disruptionDelays[order.Disruption_Type] = { totalDelay: 0, count: 0 };
-                }
-                disruptionDelays[order.Disruption_Type].totalDelay += order.delay;
-                disruptionDelays[order.Disruption_Type].count += 1;
-                
-                // Product category lead times
-                if (!categoryLeadTimes[order.Product_Category]) {
-                    categoryLeadTimes[order.Product_Category] = { totalLeadTime: 0, count: 0 };
-                }
-                categoryLeadTimes[order.Product_Category].totalLeadTime += order.leadTime;
-                categoryLeadTimes[order.Product_Category].count += 1;
-            });
-            
-            // Calculate averages
-            const supplierAvgLeadTimes = Object.keys(supplierLeadTimes).map(supplier => {
-                const avg = supplierLeadTimes[supplier].totalLeadTime / supplierLeadTimes[supplier].count;
-                return { name: supplier, value: parseFloat(avg.toFixed(1)) };
-            });
-            
-            const transportAvgLeadTimes = Object.keys(transportLeadTimes).map(mode => {
-                const avg = transportLeadTimes[mode].totalLeadTime / transportLeadTimes[mode].count;
-                return { name: mode, value: parseFloat(avg.toFixed(1)) };
-            });
-            
-            const monthAvgDelays = Object.keys(monthDelays).map(monthName => {
-                const avg = monthDelays[monthName].totalDelay / monthDelays[monthName].count;
-                return { 
-                    name: monthName, 
-                    month: monthDelays[monthName].month, 
-                    value: parseFloat(avg.toFixed(1)) 
-                };
-            });
-            
-            const disruptionAvgDelays = Object.keys(disruptionDelays).map(type => {
-                const avg = disruptionDelays[type].totalDelay / disruptionDelays[type].count;
-                return { name: type, value: parseFloat(avg.toFixed(1)) };
-            });
-            
-            const categoryAvgLeadTimes = Object.keys(categoryLeadTimes).map(category => {
-                const avg = categoryLeadTimes[category].totalLeadTime / categoryLeadTimes[category].count;
-                return { name: category, value: parseFloat(avg.toFixed(1)) };
-            });
-            
-            // Sort results
-            supplierAvgLeadTimes.sort((a, b) => b.value - a.value);
-            transportAvgLeadTimes.sort((a, b) => a.value - b.value);
-            monthAvgDelays.sort((a, b) => a.month - b.month); // Sort by month chronologically
-            disruptionAvgDelays.sort((a, b) => b.value - a.value);
-            categoryAvgLeadTimes.sort((a, b) => a.value - b.value);
-            
-            // Return processed data and summaries
-            return {
-                orders: processed,
-                supplierLeadTimes: supplierAvgLeadTimes,
-                transportLeadTimes: transportAvgLeadTimes,
-                monthDelays: monthAvgDelays,
-                disruptionDelays: disruptionAvgDelays,
-                categoryLeadTimes: categoryAvgLeadTimes
-            };
-        }
         
-        // Ask a question and get the answer
-        function askQuestion(question) {
-            // Check if data has been processed
-            if (!processedData || !processedData.orders) {
-                alert("Please upload and analyze data first.");
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.style.borderColor = '#ccc';
+            dropArea.style.backgroundColor = '#f9f9f9';
+        });
+        
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.style.borderColor = '#ccc';
+            dropArea.style.backgroundColor = '#f9f9f9';
+            
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                handleFile(fileInput.files[0]);
+            }
+        });
+        
+        analyzeBtn.addEventListener('click', () => {
+            if (!csvData) {
+                alert('Please upload a CSV file first');
                 return;
             }
             
-            // Add a slight loading effect
-            const answerId = 'answer-' + Date.now();
-            answersContainer.innerHTML = `
-                <div class="answer-card fade-in" id="${answerId}">
-                    <div class="answer-question">${question}</div>
-                    <div class="spinner" style="margin: 1rem auto;"></div>
-                    <p>Analyzing your question...</p>
-                </div>
-            ` + answersContainer.innerHTML;
+            analyzeData();
+        });
+        
+        // Handle file upload
+        function handleFile(file) {
+            if (file.type !== 'text/csv') {
+                alert('Please upload a CSV file');
+                return;
+            }
             
-            // Process the question after a short delay
-            setTimeout(() => {
-                const answerCard = document.getElementById(answerId);
-                let answer = '';
-                let chartData = null;
-                let chartType = '';
-                let chartTitle = '';
-                
-                // Process different question types
-                if (question.toLowerCase().includes('supplier') && question.toLowerCase().includes('highest') && question.toLowerCase().includes('lead time')) {
-                    // Supplier with highest lead time
-                    const highestSupplier = processedData.supplierLeadTimes[0];
-                    answer = `<p class="answer-text"><span class="answer-highlight">${highestSupplier.name}</span> has the highest average lead time of <span class="answer-highlight">${highestSupplier.value} days</span>.</p>`;
-                    chartData = processedData.supplierLeadTimes;
-                    chartType = 'bar';
-                    chartTitle = 'Average Lead Time by Supplier (Days)';
-                }
-                else if (question.toLowerCase().includes('transportation') && question.toLowerCase().includes('lowest') && question.toLowerCase().includes('lead time')) {
-                    // Transportation mode with lowest lead time
-                    const lowestTransport = processedData.transportLeadTimes[0];
-                    answer = `<p class="answer-text"><span class="answer-highlight">${lowestTransport.name}</span> transportation has the lowest average lead time of <span class="answer-highlight">${lowestTransport.value} days</span>.</p>`;
-                    chartData = processedData.transportLeadTimes;
-                    chartType = 'horizontalBar';
-                    chartTitle = 'Average Lead Time by Transportation Mode (Days)';
-                }
-                else if (question.toLowerCase().includes('month') && question.toLowerCase().includes('highest') && question.toLowerCase().includes('delays')) {
-                    // Month with highest delays
-                    const sortedMonths = [...processedData.monthDelays].sort((a, b) => b.value - a.value);
-                    const highestMonth = sortedMonths[0];
-                    answer = `<p class="answer-text"><span class="answer-highlight">${highestMonth.name}</span> has the highest average delay of <span class="answer-highlight">${highestMonth.value} days</span>.</p>`;
-                    chartData = processedData.monthDelays;
-                    chartType = 'line';
-                    chartTitle = 'Average Delay by Month (Days)';
-                }
-                else if (question.toLowerCase().includes('disruption') && (question.toLowerCase().includes('longest') || question.toLowerCase().includes('highest') || question.toLowerCase().includes('worst')) && question.toLowerCase().includes('delay')) {
-                    // Disruption type with longest delay
-                    const highestDisruption = processedData.disruptionDelays[0];
-                    answer = `<p class="answer-text"><span class="answer-highlight">${highestDisruption.name}</span> disruptions cause the longest average delay of <span class="answer-highlight">${highestDisruption.value} days</span>.</p>`;
-                    chartData = processedData.disruptionDelays;
-                    chartType = 'bar';
-                    chartTitle = 'Average Delay by Disruption Type (Days)';
-                }
-                else if (question.toLowerCase().includes('category') && question.toLowerCase().includes('shortest') && question.toLowerCase().includes('lead time')) {
-                    // Product category with shortest lead time
-                    const shortestCategory = processedData.categoryLeadTimes[0];
-                    answer = `<p class="answer-text"><span class="answer-highlight">${shortestCategory.name}</span> products have the shortest average lead time of <span class="answer-highlight">${shortestCategory.value} days</span>.</p>`;
-                    chartData = processedData.categoryLeadTimes;
-                    chartType = 'bar';
-                    chartTitle = 'Average Lead Time by Product Category (Days)';
-                }
-                else {
-                    // Unknown question
-                    answer = `<p class="answer-text">I'm not sure how to answer that question. Try asking about suppliers, transportation modes, months, disruption types, or product categories and their relationship to lead times or delays.</p>`;
-                }
-                
-                // Update the answer card
-                answerCard.innerHTML = `
-                    <div class="answer-question">${question}</div>
-                    ${answer}
-                `;
-                
-                // Add chart if we have data
-                if (chartData) {
-                    const chartContainerId = `chart-${Date.now()}`;
-                    answerCard.innerHTML += `<div class="chart-container"><canvas id="${chartContainerId}"></canvas></div>`;
-                    
-                    // Create the chart
-                    setTimeout(() => {
-                        createChart(chartContainerId, chartType, chartData, chartTitle);
-                    }, 100);
-                }
-            }, 800);
+            fileName.textContent = file.name;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                csvData = e.target.result;
+            };
+            reader.readAsText(file);
         }
         
-        // Create a chart
-        function createChart(containerId, type, data, title) {
-            const ctx = document.getElementById(containerId).getContext('2d');
+        // Parse CSV data
+        function parseCSV(csv) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(csv, {
+                    header: true,
+                    dynamicTyping: false,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        resolve(results.data);
+                    },
+                    error: function(error) {
+                        reject(error);
+                    }
+                });
+            });
+        }
+        
+        // Calculate days between two dates
+        function daysBetween(date1, date2) {
+            const d1 = new Date(date1);
+            const d2 = new Date(date2);
+            const diffTime = Math.abs(d2 - d1);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+        
+        // Process data
+        async function processData(rawData) {
+            return rawData.map(row => {
+                // Calculate lead time
+                const leadTime = daysBetween(row.Order_Date, row.Actual_Delivery_Date);
+                
+                // Calculate delay
+                const delay = daysBetween(row.Expected_Delivery_Date, row.Actual_Delivery_Date);
+                
+                // Extract month
+                const orderDate = new Date(row.Order_Date);
+                const month = orderDate.getMonth();
+                const monthName = new Date(0, month).toLocaleString('default', { month: 'long' });
+                
+                return {
+                    ...row,
+                    leadTime,
+                    delay,
+                    month,
+                    monthName
+                };
+            });
+        }
+        
+        // Analyze data
+        async function analyzeData() {
+            loader.classList.remove('hidden');
             
-            // Determine chart type and configuration
-            let chartConfig = {
-                type: 'bar', // default
+            try {
+                const rawData = await parseCSV(csvData);
+                processedData = await processData(rawData);
+                
+                // Calculate results for all questions
+                const results = {
+                    q1: calculateQ1(), // Supplier with highest lead time
+                    q2: calculateQ2(), // Transportation mode with lowest lead time
+                    q3: calculateQ3(), // Month with highest delays
+                    q4: calculateQ4(), // Disruption type with longest delay
+                    q5: calculateQ5()  // Product category with shortest lead time
+                };
+                
+                // Display results
+                displayResults(results);
+                
+                // Hide loader and show results
+                loader.classList.add('hidden');
+                uploadCard.classList.add('hidden');
+                resultsCard.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error analyzing data:', error);
+                alert('Error analyzing data. Please check your CSV format.');
+                loader.classList.add('hidden');
+            }
+        }
+        
+        // Q1: Supplier with highest lead time
+        function calculateQ1() {
+            const supplierData = {};
+            
+            processedData.forEach(row => {
+                if (!supplierData[row.Supplier]) {
+                    supplierData[row.Supplier] = {
+                        totalLeadTime: 0,
+                        count: 0
+                    };
+                }
+                
+                supplierData[row.Supplier].totalLeadTime += row.leadTime;
+                supplierData[row.Supplier].count += 1;
+            });
+            
+            const suppliers = Object.keys(supplierData).map(supplier => {
+                const avg = supplierData[supplier].totalLeadTime / supplierData[supplier].count;
+                return {
+                    name: supplier,
+                    value: parseFloat(avg.toFixed(1))
+                };
+            });
+            
+            suppliers.sort((a, b) => b.value - a.value);
+            
+            return {
+                highestSupplier: suppliers[0],
+                allSuppliers: suppliers
+            };
+        }
+        
+        // Q2: Transportation mode with lowest lead time
+        function calculateQ2() {
+            const transportData = {};
+            
+            processedData.forEach(row => {
+                if (!transportData[row.Transportation_Mode]) {
+                    transportData[row.Transportation_Mode] = {
+                        totalLeadTime: 0,
+                        count: 0
+                    };
+                }
+                
+                transportData[row.Transportation_Mode].totalLeadTime += row.leadTime;
+                transportData[row.Transportation_Mode].count += 1;
+            });
+            
+            const modes = Object.keys(transportData).map(mode => {
+                const avg = transportData[mode].totalLeadTime / transportData[mode].count;
+                return {
+                    name: mode,
+                    value: parseFloat(avg.toFixed(1))
+                };
+            });
+            
+            modes.sort((a, b) => a.value - b.value);
+            
+            return {
+                lowestMode: modes[0],
+                allModes: modes
+            };
+        }
+        
+        // Q3: Month with highest delays
+        function calculateQ3() {
+            const monthData = {};
+            
+            processedData.forEach(row => {
+                if (!monthData[row.monthName]) {
+                    monthData[row.monthName] = {
+                        totalDelay: 0,
+                        count: 0,
+                        month: row.month
+                    };
+                }
+                
+                monthData[row.monthName].totalDelay += row.delay;
+                monthData[row.monthName].count += 1;
+            });
+            
+            const months = Object.keys(monthData).map(monthName => {
+                const avg = monthData[monthName].totalDelay / monthData[monthName].count;
+                return {
+                    name: monthName,
+                    month: monthData[monthName].month,
+                    value: parseFloat(avg.toFixed(1))
+                };
+            });
+            
+            // Sort by delay (highest first)
+            const sortedByDelay = [...months].sort((a, b) => b.value - a.value);
+            
+            // Sort by month (for display)
+            months.sort((a, b) => a.month - b.month);
+            
+            return {
+                highestMonth: sortedByDelay[0],
+                allMonths: months
+            };
+        }
+        
+        // Q4: Disruption type with longest delay
+        function calculateQ4() {
+            const disruptionData = {};
+            
+            processedData.forEach(row => {
+                if (!disruptionData[row.Disruption_Type]) {
+                    disruptionData[row.Disruption_Type] = {
+                        totalDelay: 0,
+                        count: 0
+                    };
+                }
+                
+                disruptionData[row.Disruption_Type].totalDelay += row.delay;
+                disruptionData[row.Disruption_Type].count += 1;
+            });
+            
+            const disruptions = Object.keys(disruptionData).map(type => {
+                const avg = disruptionData[type].totalDelay / disruptionData[type].count;
+                return {
+                    name: type,
+                    value: parseFloat(avg.toFixed(1))
+                };
+            });
+            
+            disruptions.sort((a, b) => b.value - a.value);
+            
+            return {
+                longestDisruption: disruptions[0],
+                allDisruptions: disruptions
+            };
+        }
+        
+        // Q5: Product category with shortest lead time
+        function calculateQ5() {
+            const categoryData = {};
+            
+            processedData.forEach(row => {
+                if (!categoryData[row.Product_Category]) {
+                    categoryData[row.Product_Category] = {
+                        totalLeadTime: 0,
+                        count: 0
+                    };
+                }
+                
+                categoryData[row.Product_Category].totalLeadTime += row.leadTime;
+                categoryData[row.Product_Category].count += 1;
+            });
+            
+            const categories = Object.keys(categoryData).map(category => {
+                const avg = categoryData[category].totalLeadTime / categoryData[category].count;
+                return {
+                    name: category,
+                    value: parseFloat(avg.toFixed(1))
+                };
+            });
+            
+            categories.sort((a, b) => a.value - b.value);
+            
+            return {
+                shortestCategory: categories[0],
+                allCategories: categories
+            };
+        }
+        
+        // Display results
+        function displayResults(results) {
+            // Q1: Supplier with highest lead time
+            document.getElementById('q1-result').textContent = `${results.q1.highestSupplier.name} (${results.q1.highestSupplier.value} days)`;
+            
+            let q1Details = '<table><tr><th>Supplier</th><th>Average Lead Time (days)</th></tr>';
+            results.q1.allSuppliers.forEach(supplier => {
+                q1Details += `<tr><td>${supplier.name}</td><td>${supplier.value}</td></tr>`;
+            });
+            q1Details += '</table>';
+            document.getElementById('q1-details').innerHTML = q1Details;
+            
+            // Q2: Transportation mode with lowest lead time
+            document.getElementById('q2-result').textContent = `${results.q2.lowestMode.name} (${results.q2.lowestMode.value} days)`;
+            
+            let q2Details = '<table><tr><th>Transportation Mode</th><th>Average Lead Time (days)</th></tr>';
+            results.q2.allModes.forEach(mode => {
+                q2Details += `<tr><td>${mode.name}</td><td>${mode.value}</td></tr>`;
+            });
+            q2Details += '</table>';
+            document.getElementById('q2-details').innerHTML = q2Details;
+            
+            // Q3: Month with highest delays
+            document.getElementById('q3-result').textContent = `${results.q3.highestMonth.name} (${results.q3.highestMonth.value} days)`;
+            
+            let q3Details = '<table><tr><th>Month</th><th>Average Delay (days)</th></tr>';
+            results.q3.allMonths.forEach(month => {
+                q3Details += `<tr><td>${month.name}</td><td>${month.value}</td></tr>`;
+            });
+            q3Details += '</table>';
+            document.getElementById('q3-details').innerHTML = q3Details;
+            
+            // Q4: Disruption type with longest delay
+            document.getElementById('q4-result').textContent = `${results.q4.longestDisruption.name} (${results.q4.longestDisruption.value} days)`;
+            
+            let q4Details = '<table><tr><th>Disruption Type</th><th>Average Delay (days)</th></tr>';
+            results.q4.allDisruptions.forEach(disruption => {
+                q4Details += `<tr><td>${disruption.name}</td><td>${disruption.value}</td></tr>`;
+            });
+            q4Details += '</table>';
+            document.getElementById('q4-details').innerHTML = q4Details;
+            
+            // Q5: Product category with shortest lead time
+            document.getElementById('q5-result').textContent = `${results.q5.shortestCategory.name} (${results.q5.shortestCategory.value} days)`;
+            
+            let q5Details = '<table><tr><th>Product Category</th><th>Average Lead Time (days)</th></tr>';
+            results.q5.allCategories.forEach(category => {
+                q5Details += `<tr><td>${category.name}</td><td>${category.value}</td></tr>`;
+            });
+            q5Details += '</table>';
+            document.getElementById('q5-details').innerHTML = q5Details;
+            
+            // Create charts
+            createCharts(results);
+        }
+        
+        // Create charts
+        function createCharts(results) {
+            // Destroy existing charts to prevent duplicates
+            Object.values(charts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            
+            // Colors for charts
+            const colors = [
+                '#4a6de5', '#5e81ea', '#7295ef', '#86a9f4', '#9abdf9',
+                '#aed1fe', '#c2e5ff', '#d6f9ff', '#eaffff', '#ffffff'
+            ];
+            
+            // Q1: Supplier chart
+            const ctx1 = document.getElementById('supplier-chart').getContext('2d');
+            charts.supplier = new Chart(ctx1, {
+                type: 'bar',
                 data: {
-                    labels: data.map(item => item.name),
+                    labels: results.q1.allSuppliers.map(s => s.name),
                     datasets: [{
-                        label: title,
-                        data: data.map(item => item.value),
-                        backgroundColor: getGradientColors(data.length),
-                        borderColor: '#4361ee',
+                        label: 'Average Lead Time (days)',
+                        data: results.q1.allSuppliers.map(s => s.value),
+                        backgroundColor: colors.slice(0, results.q1.allSuppliers.length),
                         borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: title,
-                            font: {
-                                size: 16,
-                                weight: 'bold'
-                            }
-                        },
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.parsed.y} days`;
-                                }
-                            }
-                        }
-                    },
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -1074,42 +623,122 @@
                         }
                     }
                 }
-            };
+            });
             
-            // Adjust for chart type
-            if (type === 'horizontalBar') {
-                chartConfig.type = 'bar';
-                chartConfig.options.indexAxis = 'y';
-            } else if (type === 'line') {
-                chartConfig.type = 'line';
-                chartConfig.data.datasets[0].fill = false;
-                chartConfig.data.datasets[0].tension = 0.4;
-            }
+            // Q2: Transportation mode chart
+            const ctx2 = document.getElementById('transport-chart').getContext('2d');
+            charts.transport = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: results.q2.allModes.map(m => m.name),
+                    datasets: [{
+                        label: 'Average Lead Time (days)',
+                        data: results.q2.allModes.map(m => m.value),
+                        backgroundColor: colors.slice(0, results.q2.allModes.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Days'
+                            }
+                        }
+                    }
+                }
+            });
             
-            // Create chart
-            const chart = new Chart(ctx, chartConfig);
-            charts[containerId] = chart;
+            // Q3: Month chart
+            const ctx3 = document.getElementById('month-chart').getContext('2d');
+            charts.month = new Chart(ctx3, {
+                type: 'line',
+                data: {
+                    labels: results.q3.allMonths.map(m => m.name),
+                    datasets: [{
+                        label: 'Average Delay (days)',
+                        data: results.q3.allMonths.map(m => m.value),
+                        borderColor: '#4a6de5',
+                        backgroundColor: 'rgba(74, 109, 229, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Days'
+                            }
+                        }
+                    }
+                }
+            });
             
-            return chart;
-        }
-        
-        // Generate gradient colors for charts
-        function getGradientColors(count) {
-            const colors = [
-                '#4361ee', '#3a0ca3', '#7209b7', '#f72585', '#4895ef',
-                '#4cc9f0', '#560bad', '#480ca8', '#3f37c9', '#4361ee'
-            ];
+            // Q4: Disruption type chart
+            const ctx4 = document.getElementById('disruption-chart').getContext('2d');
+            charts.disruption = new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: results.q4.allDisruptions.map(d => d.name),
+                    datasets: [{
+                        label: 'Average Delay (days)',
+                        data: results.q4.allDisruptions.map(d => d.value),
+                        backgroundColor: colors.slice(0, results.q4.allDisruptions.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Days'
+                            }
+                        }
+                    }
+                }
+            });
             
-            if (count <= colors.length) {
-                return colors.slice(0, count);
-            }
-            
-            // Generate more colors if needed
-            const result = [...colors];
-            for (let i = colors.length; i < count; i++) {
-                result.push(colors[i % colors.length]);
-            }
-            return result;
+            // Q5: Product category chart
+            const ctx5 = document.getElementById('category-chart').getContext('2d');
+            charts.category = new Chart(ctx5, {
+                type: 'bar',
+                data: {
+                    labels: results.q5.allCategories.map(c => c.name),
+                    datasets: [{
+                        label: 'Average Lead Time (days)',
+                        data: results.q5.allCategories.map(c => c.value),
+                        backgroundColor: colors.slice(0, results.q5.allCategories.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Days'
+                            }
+                        }
+                    }
+                }
+            });
         }
     </script>
 </body>
