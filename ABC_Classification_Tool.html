@@ -6,6 +6,7 @@
     <title>Generalized Slotting Strategy Tool</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -77,9 +78,6 @@
         .file-input-wrapper input[type=file] {
             position: absolute;
             left: -9999px;
-            opacity: 0;
-            width: 0.1px;
-            height: 0.1px;
         }
 
         .file-input-btn {
@@ -93,7 +91,6 @@
             font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
-            display: inline-block;
         }
 
         .file-input-btn:hover {
@@ -351,8 +348,8 @@
             <div class="control-panel">
                 <div class="control-row">
                     <div class="file-input-wrapper">
-                        <input type="file" id="csvFile" accept=".csv,text/csv,application/csv,text/comma-separated-values" multiple="false" />
-                        <label for="csvFile" class="file-input-btn">📁 Choose CSV File</label>
+                        <input type="file" id="csvFile" accept=".csv,.xlsx,.xls,.txt" />
+                        <label for="csvFile" class="file-input-btn">📁 Choose File (CSV, Excel, TXT)</label>
                     </div>
                     <div id="fileInfo"></div>
                 </div>
@@ -503,110 +500,115 @@
                 const file = event.target.files[0];
                 if (!file) return;
 
-                // Check file type
-                if (!file.name.toLowerCase().endsWith('.csv')) {
-                    this.showMessage('❌ Please select a CSV file only', 'error');
-                    return;
-                }
-
                 const fileInfo = document.getElementById('fileInfo');
                 fileInfo.innerHTML = `<div class="file-info">📄 Selected: ${file.name} (${(file.size/1024).toFixed(1)} KB)</div>`;
 
-                // Reset the file input to allow selecting the same file again
-                const fileInput = document.getElementById('csvFile');
+                const fileExtension = file.name.split('.').pop().toLowerCase();
                 
-                Papa.parse(file, {
-                    complete: (results) => {
-                        console.log('File parsed successfully:', results);
-                        if (results.errors && results.errors.length > 0) {
-                            console.warn('Parsing warnings:', results.errors);
+                if (fileExtension === 'csv' || fileExtension === 'txt') {
+                    // Handle CSV/TXT files
+                    Papa.parse(file, {
+                        complete: (results) => {
+                            this.originalData = results.data;
+                            this.validateAndProcessCSV();
+                        },
+                        header: false,
+                        dynamicTyping: true,
+                        skipEmptyLines: true
+                    });
+                } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+                    // Handle Excel files
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            
+                            // Get the first sheet
+                            const firstSheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[firstSheetName];
+                            
+                            // Convert to array of arrays
+                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+                                header: 1, 
+                                defval: null,
+                                raw: false
+                            });
+                            
+                            this.originalData = jsonData;
+                            this.validateAndProcessCSV();
+                            
+                        } catch (error) {
+                            this.showMessage(`❌ Error reading Excel file: ${error.message}`, 'error');
                         }
-                        this.originalData = results.data;
-                        this.validateAndProcessCSV();
-                    },
-                    error: (error) => {
-                        console.error('Parsing error:', error);
-                        this.showMessage(`❌ Error reading file: ${error.message}`, 'error');
-                    },
-                    header: false,
-                    dynamicTyping: true,
-                    skipEmptyLines: true,
-                    delimiter: ",", // Explicitly set delimiter
-                    newline: "", // Auto-detect line endings
-                    quoteChar: '"',
-                    escapeChar: '"',
-                    comments: false,
-                    preview: 0, // Parse entire file
-                    fastMode: false,
-                    beforeFirstChunk: undefined,
-                    chunkSize: undefined,
-                    worker: false
-                });
+                    };
+                    reader.onerror = () => {
+                        this.showMessage('❌ Error reading file', 'error');
+                    };
+                    reader.readAsArrayBuffer(file);
+                } else {
+                    this.showMessage('❌ Unsupported file format. Please use CSV, Excel (.xlsx, .xls), or TXT files.', 'error');
+                }
             }
 
             validateAndProcessCSV() {
                 try {
                     if (!this.originalData || this.originalData.length === 0) {
-                        throw new Error('CSV file is empty or could not be read');
+                        throw new Error('File is empty or contains no valid data');
                     }
 
-                    console.log('Original data before processing:', this.originalData);
-
-                    // Remove any empty rows/columns more carefully
-                    this.originalData = this.originalData.filter(row => {
-                        return Array.isArray(row) && row.length > 0 && 
-                               row.some(cell => cell !== null && cell !== undefined && cell !== '' && !isNaN(cell));
-                    });
+                    // Remove any completely empty rows
+                    this.originalData = this.originalData.filter(row => 
+                        row && row.some(cell => cell !== null && cell !== undefined && cell !== '' && cell !== 0)
+                    );
 
                     if (this.originalData.length === 0) {
-                        throw new Error('CSV file contains no valid numeric data');
+                        throw new Error('File contains no valid data rows');
                     }
 
-                    // Find the maximum row length to standardize
-                    const maxLength = Math.max(...this.originalData.map(row => row.length));
+                    // Find the maximum row length to normalize the grid
+                    const maxCols = Math.max(...this.originalData.map(row => row ? row.length : 0));
                     
-                    // Standardize row lengths and clean data
+                    // Normalize all rows to have the same length and convert to numbers
                     this.originalData = this.originalData.map(row => {
-                        // Pad row to max length with zeros if needed
-                        while (row.length < maxLength) {
-                            row.push(0);
-                        }
+                        if (!row) row = [];
                         
-                        // Convert all values to numbers, replace invalid with 0
-                        return row.map(cell => {
-                            if (cell === null || cell === undefined || cell === '') return 0;
-                            const num = Number(cell);
-                            return isNaN(num) || num < 0 ? 0 : num;
-                        });
+                        // Pad row to max length and convert to numbers
+                        const normalizedRow = [];
+                        for (let i = 0; i < maxCols; i++) {
+                            let value = row[i];
+                            
+                            // Handle different data types
+                            if (value === null || value === undefined || value === '') {
+                                value = 0; // Default empty cells to 0
+                            } else if (typeof value === 'string') {
+                                // Try to parse as number
+                                const parsed = parseFloat(value.replace(/[^\d.-]/g, ''));
+                                value = isNaN(parsed) ? 0 : Math.max(0, parsed);
+                            } else if (typeof value === 'number') {
+                                value = isNaN(value) ? 0 : Math.max(0, value);
+                            } else {
+                                value = 0;
+                            }
+                            
+                            normalizedRow.push(value);
+                        }
+                        return normalizedRow;
                     });
 
-                    console.log('Processed data:', this.originalData);
+                    // Validate we have at least some non-zero values
+                    const hasValidData = this.originalData.some(row => 
+                        row.some(cell => cell > 0)
+                    );
 
-                    // Validate final data structure
-                    if (this.originalData.length === 0 || this.originalData[0].length === 0) {
-                        throw new Error('Invalid grid dimensions');
-                    }
-
-                    // Update dock position limits
-                    const maxRow = this.originalData.length - 1;
-                    const maxCol = this.originalData[0].length - 1;
-                    
-                    document.getElementById('dockRow').max = maxRow;
-                    document.getElementById('dockCol').max = maxCol;
-                    
-                    // Reset dock position if it's out of bounds
-                    if (parseInt(document.getElementById('dockRow').value) > maxRow) {
-                        document.getElementById('dockRow').value = 0;
-                    }
-                    if (parseInt(document.getElementById('dockCol').value) > maxCol) {
-                        document.getElementById('dockCol').value = 0;
+                    if (!hasValidData) {
+                        throw new Error('File contains no positive frequency values');
                     }
 
                     document.getElementById('processBtn').disabled = false;
-                    this.showMessage(`✅ CSV loaded successfully! Grid size: ${this.originalData.length} × ${this.originalData[0].length}`, 'success');
+                    this.showMessage(`✅ File loaded successfully! Grid size: ${this.originalData.length} × ${this.originalData[0].length}`, 'success');
                     
                 } catch (error) {
-                    console.error('Validation error:', error);
                     this.showMessage(`❌ Error: ${error.message}`, 'error');
                     document.getElementById('processBtn').disabled = true;
                 }
