@@ -77,6 +77,9 @@
         .file-input-wrapper input[type=file] {
             position: absolute;
             left: -9999px;
+            opacity: 0;
+            width: 0.1px;
+            height: 0.1px;
         }
 
         .file-input-btn {
@@ -90,6 +93,7 @@
             font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+            display: inline-block;
         }
 
         .file-input-btn:hover {
@@ -347,7 +351,7 @@
             <div class="control-panel">
                 <div class="control-row">
                     <div class="file-input-wrapper">
-                        <input type="file" id="csvFile" accept=".csv" />
+                        <input type="file" id="csvFile" accept=".csv,text/csv,application/csv,text/comma-separated-values" multiple="false" />
                         <label for="csvFile" class="file-input-btn">📁 Choose CSV File</label>
                     </div>
                     <div id="fileInfo"></div>
@@ -499,46 +503,110 @@
                 const file = event.target.files[0];
                 if (!file) return;
 
+                // Check file type
+                if (!file.name.toLowerCase().endsWith('.csv')) {
+                    this.showMessage('❌ Please select a CSV file only', 'error');
+                    return;
+                }
+
                 const fileInfo = document.getElementById('fileInfo');
                 fileInfo.innerHTML = `<div class="file-info">📄 Selected: ${file.name} (${(file.size/1024).toFixed(1)} KB)</div>`;
 
+                // Reset the file input to allow selecting the same file again
+                const fileInput = document.getElementById('csvFile');
+                
                 Papa.parse(file, {
                     complete: (results) => {
+                        console.log('File parsed successfully:', results);
+                        if (results.errors && results.errors.length > 0) {
+                            console.warn('Parsing warnings:', results.errors);
+                        }
                         this.originalData = results.data;
                         this.validateAndProcessCSV();
                     },
+                    error: (error) => {
+                        console.error('Parsing error:', error);
+                        this.showMessage(`❌ Error reading file: ${error.message}`, 'error');
+                    },
                     header: false,
                     dynamicTyping: true,
-                    skipEmptyLines: true
+                    skipEmptyLines: true,
+                    delimiter: ",", // Explicitly set delimiter
+                    newline: "", // Auto-detect line endings
+                    quoteChar: '"',
+                    escapeChar: '"',
+                    comments: false,
+                    preview: 0, // Parse entire file
+                    fastMode: false,
+                    beforeFirstChunk: undefined,
+                    chunkSize: undefined,
+                    worker: false
                 });
             }
 
             validateAndProcessCSV() {
                 try {
-                    // Remove any empty rows/columns
-                    this.originalData = this.originalData.filter(row => 
-                        row.some(cell => cell !== null && cell !== undefined && cell !== '')
-                    ).map(row => 
-                        row.filter(cell => cell !== null && cell !== undefined && cell !== '')
-                    );
-
-                    if (this.originalData.length === 0) {
-                        throw new Error('CSV file is empty or contains no valid data');
+                    if (!this.originalData || this.originalData.length === 0) {
+                        throw new Error('CSV file is empty or could not be read');
                     }
 
-                    // Validate data is numeric
-                    for (let row of this.originalData) {
-                        for (let cell of row) {
-                            if (typeof cell !== 'number' || isNaN(cell) || cell < 0) {
-                                throw new Error('All values must be non-negative numbers');
-                            }
+                    console.log('Original data before processing:', this.originalData);
+
+                    // Remove any empty rows/columns more carefully
+                    this.originalData = this.originalData.filter(row => {
+                        return Array.isArray(row) && row.length > 0 && 
+                               row.some(cell => cell !== null && cell !== undefined && cell !== '' && !isNaN(cell));
+                    });
+
+                    if (this.originalData.length === 0) {
+                        throw new Error('CSV file contains no valid numeric data');
+                    }
+
+                    // Find the maximum row length to standardize
+                    const maxLength = Math.max(...this.originalData.map(row => row.length));
+                    
+                    // Standardize row lengths and clean data
+                    this.originalData = this.originalData.map(row => {
+                        // Pad row to max length with zeros if needed
+                        while (row.length < maxLength) {
+                            row.push(0);
                         }
+                        
+                        // Convert all values to numbers, replace invalid with 0
+                        return row.map(cell => {
+                            if (cell === null || cell === undefined || cell === '') return 0;
+                            const num = Number(cell);
+                            return isNaN(num) || num < 0 ? 0 : num;
+                        });
+                    });
+
+                    console.log('Processed data:', this.originalData);
+
+                    // Validate final data structure
+                    if (this.originalData.length === 0 || this.originalData[0].length === 0) {
+                        throw new Error('Invalid grid dimensions');
+                    }
+
+                    // Update dock position limits
+                    const maxRow = this.originalData.length - 1;
+                    const maxCol = this.originalData[0].length - 1;
+                    
+                    document.getElementById('dockRow').max = maxRow;
+                    document.getElementById('dockCol').max = maxCol;
+                    
+                    // Reset dock position if it's out of bounds
+                    if (parseInt(document.getElementById('dockRow').value) > maxRow) {
+                        document.getElementById('dockRow').value = 0;
+                    }
+                    if (parseInt(document.getElementById('dockCol').value) > maxCol) {
+                        document.getElementById('dockCol').value = 0;
                     }
 
                     document.getElementById('processBtn').disabled = false;
-                    this.showMessage('✅ CSV loaded successfully!', 'success');
+                    this.showMessage(`✅ CSV loaded successfully! Grid size: ${this.originalData.length} × ${this.originalData[0].length}`, 'success');
                     
                 } catch (error) {
+                    console.error('Validation error:', error);
                     this.showMessage(`❌ Error: ${error.message}`, 'error');
                     document.getElementById('processBtn').disabled = true;
                 }
