@@ -6,6 +6,7 @@
     <title>Generalizing Slotting Strategy</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -280,7 +281,7 @@
                 <div class="input-group">
                     <label>📁 Upload CSV Grid File</label>
                     <label class="file-input" for="csvFile">
-                        <input type="file" id="csvFile" accept=".csv" style="position: absolute; left: -9999px;">
+                        <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" style="position: absolute; left: -9999px;">
                         Choose CSV File
                     </label>
                 </div>
@@ -428,15 +429,40 @@
             const obstacleInput = document.getElementById('obstacles').value;
             obstacles = parseObstacles(obstacleInput);
 
-            Papa.parse(file, {
-                complete: function(results) {
-                    gridData = results.data.filter(row => row.some(cell => cell.trim() !== ''));
-                    processGridData(classAPercent, classBPercent, classCPercent);
-                },
-                header: false,
-                dynamicTyping: true,
-                skipEmptyLines: true
-            });
+            // Check file type and process accordingly
+            const fileName = file.name.toLowerCase();
+            if (fileName.endsWith('.csv')) {
+                // Process CSV file
+                Papa.parse(file, {
+                    complete: function(results) {
+                        gridData = results.data.filter(row => row.some(cell => cell.trim() !== ''));
+                        processGridData(classAPercent, classBPercent, classCPercent);
+                    },
+                    header: false,
+                    dynamicTyping: true,
+                    skipEmptyLines: true
+                });
+            } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                // Process Excel file
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                        
+                        gridData = jsonData.filter(row => row.some(cell => cell !== undefined && cell !== null && cell !== ''));
+                        processGridData(classAPercent, classBPercent, classCPercent);
+                    } catch (error) {
+                        alert('Error reading Excel file: ' + error.message);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert('Please select a CSV file (.csv, .xlsx, .xls)');
+            }
         }
 
         function parseObstacles(input) {
