@@ -240,6 +240,9 @@
             padding: 15px 30px;
             border-radius: 8px;
             transition: all 0.3s ease;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
         }
 
         .file-input-wrapper:hover {
@@ -249,7 +252,31 @@
 
         .file-input-wrapper input[type=file] {
             position: absolute;
-            left: -9999px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .btn-file {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 5px;
+            display: inline-block;
+        }
+
+        .btn-file:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(155, 89, 182, 0.4);
         }
 
         .progress-bar {
@@ -300,10 +327,13 @@
                 <h2>Data Input</h2>
                 <div class="form-group">
                     <label>Upload Frequency Data CSV:</label>
-                    <div class="file-input-wrapper">
-                        <input type="file" id="csvFile" accept=".csv" />
-                        📁 Choose CSV File
+                    <div style="margin-bottom: 10px;">
+                        <label for="csvFile" class="btn-file">
+                            📁 Choose CSV File
+                        </label>
+                        <input type="file" id="csvFile" accept=".csv" style="display: none;" />
                     </div>
+                    <div id="fileName" style="margin-top: 10px; color: #2c3e50; font-weight: 600;"></div>
                     <div id="fileStatus" class="status" style="display: none;"></div>
                 </div>
             </div>
@@ -422,6 +452,9 @@
         document.getElementById('csvFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
+                // Show selected file name
+                document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+                
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     try {
@@ -433,6 +466,11 @@
                 };
                 reader.readAsText(file);
             }
+        });
+
+        // Make the label clickable
+        document.querySelector('.btn-file').addEventListener('click', function() {
+            document.getElementById('csvFile').click();
         });
 
         function parseCSV(csvText) {
