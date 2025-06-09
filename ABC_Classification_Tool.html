@@ -240,16 +240,20 @@
             padding: 15px 30px;
             border-radius: 8px;
             transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 16px;
+            border: 2px solid transparent;
         }
 
         .file-input-wrapper:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(155, 89, 182, 0.4);
+            border-color: #9b59b6;
         }
 
-        .file-input-wrapper input[type=file] {
-            position: absolute;
-            left: -9999px;
+        .file-input-wrapper:active {
+            transform: translateY(0);
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
         }
 
         .progress-bar {
@@ -299,11 +303,12 @@
             <div class="section">
                 <h2>Data Input</h2>
                 <div class="form-group">
-                    <label>Upload Frequency Data CSV:</label>
-                    <div class="file-input-wrapper">
-                        <input type="file" id="csvFile" accept=".csv,.xlsx,.xls,.txt" />
-                        📁 Choose Data File
+                    <label>Upload Frequency Data (CSV, Excel, TXT):</label>
+                    <div class="file-input-wrapper" onclick="document.getElementById('csvFile').click();">
+                        <input type="file" id="csvFile" accept=".csv,.xlsx,.xls,.txt" style="display: none;" />
+                        📁 Choose File (CSV, Excel, TXT)
                     </div>
+                    <div id="fileName" style="margin-top: 10px; font-weight: bold; color: #2c3e50;"></div>
                     <div id="fileStatus" class="status" style="display: none;"></div>
                 </div>
             </div>
@@ -418,17 +423,17 @@
         let skuData = [];
         let gridDimensions = { rows: 0, cols: 0 };
 
-        // File handling
+        // File handling with support for multiple file types
         document.getElementById('csvFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                const fileName = file.name.toLowerCase();
-                const fileExtension = fileName.split('.').pop();
+                // Display selected file name
+                document.getElementById('fileName').textContent = `Selected: ${file.name}`;
                 
-                showStatus(`Loading file: ${file.name}...`, 'info');
+                const fileExtension = file.name.split('.').pop().toLowerCase();
                 
                 if (fileExtension === 'csv' || fileExtension === 'txt') {
-                    // Handle CSV/TXT files
+                    // Handle CSV and TXT files
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         try {
@@ -441,35 +446,20 @@
                     reader.readAsText(file);
                 } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
                     // Handle Excel files
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        try {
-                            parseExcel(e.target.result);
-                            showStatus('Excel file loaded successfully!', 'success');
-                        } catch (error) {
-                            showStatus('Error parsing Excel file: ' + error.message, 'error');
-                        }
-                    };
-                    reader.readAsArrayBuffer(file);
+                    showStatus('Excel files detected. Please convert to CSV format or use CSV/TXT files.', 'info');
+                    // Note: For Excel support, you would need a library like SheetJS
+                    // But for simplicity, we'll ask users to convert to CSV
                 } else {
-                    showStatus('Unsupported file format. Please use CSV, TXT, or Excel files.', 'error');
+                    showStatus('Unsupported file type. Please use CSV, TXT, or Excel files.', 'error');
                 }
             }
         });
 
         function parseCSV(csvText) {
             const lines = csvText.trim().split('\n');
-            originalData = lines.map(line => {
-                // Handle different delimiters (comma, semicolon, tab)
-                let delimiter = ',';
-                if (line.includes(';') && !line.includes(',')) delimiter = ';';
-                if (line.includes('\t')) delimiter = '\t';
-                
-                return line.split(delimiter).map(cell => {
-                    const value = cell.trim().replace(/['"]/g, ''); // Remove quotes
-                    return parseFloat(value) || 0;
-                });
-            });
+            originalData = lines.map(line => 
+                line.split(',').map(cell => parseFloat(cell.trim()) || 0)
+            );
             
             gridDimensions.rows = originalData.length;
             gridDimensions.cols = originalData[0].length;
@@ -480,27 +470,6 @@
             
             visualizeOriginalGrid();
             updateProgress(25);
-        }
-
-        function parseExcel(arrayBuffer) {
-            // Simple Excel parser for basic .xlsx files
-            // This is a simplified approach - for production use, consider using SheetJS library
-            try {
-                // Convert to text and try to parse as CSV-like data
-                const uint8Array = new Uint8Array(arrayBuffer);
-                let binaryString = '';
-                for (let i = 0; i < uint8Array.length; i++) {
-                    binaryString += String.fromCharCode(uint8Array[i]);
-                }
-                
-                // This is a basic approach - Excel files are complex binary formats
-                // For better Excel support, you would need the SheetJS library
-                // For now, we'll ask users to save Excel as CSV
-                throw new Error('Excel file detected. Please save your Excel file as CSV format for best compatibility.');
-                
-            } catch (error) {
-                throw new Error('Excel parsing not fully supported. Please convert your Excel file to CSV format.');
-            }
         }
 
         function flattenToSKUs() {
