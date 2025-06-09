@@ -871,3 +871,55 @@
         <div class="stat-item"><span>Class C Picks:</span><span>${classCFreq.toLocaleString()}</span></div>
     `;
 }
+            // Add this method to your SlottingOptimizer class, right after displaySKUDistribution()
+
+displayOptimizationResults() {
+    const stats = document.getElementById('optimizationStats');
+    
+    // Calculate weighted distance savings
+    const totalOriginalDistance = this.skuData.reduce((sum, sku) => {
+        const originalDistance = Math.abs(sku.originalRow - this.dockPosition.row) + 
+                               Math.abs(sku.originalCol - this.dockPosition.col);
+        return sum + (originalDistance * sku.frequency);
+    }, 0);
+    
+    const totalOptimizedDistance = this.skuData.reduce((sum, sku) => {
+        if (sku.assignedRow >= 0 && sku.assignedCol >= 0) {
+            const optimizedDistance = Math.abs(sku.assignedRow - this.dockPosition.row) + 
+                                    Math.abs(sku.assignedCol - this.dockPosition.col);
+            return sum + (optimizedDistance * sku.frequency);
+        }
+        return sum;
+    }, 0);
+    
+    const distanceSavings = totalOriginalDistance - totalOptimizedDistance;
+    const savingsPercentage = totalOriginalDistance > 0 ? 
+        ((distanceSavings / totalOriginalDistance) * 100).toFixed(1) : 0;
+    
+    // Calculate average distances by class
+    const classAAvgDist = this.calculateAverageDistanceByClass('A');
+    const classBAvgDist = this.calculateAverageDistanceByClass('B');
+    const classCAvgDist = this.calculateAverageDistanceByClass('C');
+    
+    stats.innerHTML = `
+        <div class="stat-item"><span>Distance Savings:</span><span>${distanceSavings.toLocaleString()} units</span></div>
+        <div class="stat-item"><span>Efficiency Gain:</span><span>${savingsPercentage}%</span></div>
+        <div class="stat-item"><span>Class A Avg Distance:</span><span>${classAAvgDist.toFixed(1)}</span></div>
+        <div class="stat-item"><span>Class B Avg Distance:</span><span>${classBAvgDist.toFixed(1)}</span></div>
+        <div class="stat-item"><span>Class C Avg Distance:</span><span>${classCAvgDist.toFixed(1)}</span></div>
+        <div class="stat-item"><span>Strategy Used:</span><span>${this.strategy.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span></div>
+    `;
+}
+
+// Also add this helper method
+calculateAverageDistanceByClass(className) {
+    const classItems = this.skuData.filter(sku => sku.abcClass === className && sku.assignedRow >= 0);
+    if (classItems.length === 0) return 0;
+    
+    const totalDistance = classItems.reduce((sum, sku) => {
+        return sum + Math.abs(sku.assignedRow - this.dockPosition.row) + 
+               Math.abs(sku.assignedCol - this.dockPosition.col);
+    }, 0);
+    
+    return totalDistance / classItems.length;
+}
