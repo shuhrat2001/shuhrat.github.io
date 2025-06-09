@@ -248,7 +248,8 @@
         }
 
         .file-input-wrapper input[type=file] {
-            display: none !important;
+            position: absolute;
+            left: -9999px;
         }
 
         .progress-bar {
@@ -299,9 +300,9 @@
                 <h2>Data Input</h2>
                 <div class="form-group">
                     <label>Upload Frequency Data CSV:</label>
-                    <div class="file-input-wrapper" onclick="document.getElementById('csvFile').click()">
-                        <input type="file" id="csvFile" accept=".csv" style="display: none;" />
-                        📁 Choose CSV File
+                    <div class="file-input-wrapper">
+                        <input type="file" id="csvFile" accept=".csv,.xlsx,.xls,.txt" />
+                        📁 Choose Data File
                     </div>
                     <div id="fileStatus" class="status" style="display: none;"></div>
                 </div>
@@ -421,24 +422,54 @@
         document.getElementById('csvFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        parseCSV(e.target.result);
-                        showStatus('File loaded successfully!', 'success');
-                    } catch (error) {
-                        showStatus('Error parsing CSV: ' + error.message, 'error');
-                    }
-                };
-                reader.readAsText(file);
+                const fileName = file.name.toLowerCase();
+                const fileExtension = fileName.split('.').pop();
+                
+                showStatus(`Loading file: ${file.name}...`, 'info');
+                
+                if (fileExtension === 'csv' || fileExtension === 'txt') {
+                    // Handle CSV/TXT files
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            parseCSV(e.target.result);
+                            showStatus('File loaded successfully!', 'success');
+                        } catch (error) {
+                            showStatus('Error parsing file: ' + error.message, 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+                    // Handle Excel files
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            parseExcel(e.target.result);
+                            showStatus('Excel file loaded successfully!', 'success');
+                        } catch (error) {
+                            showStatus('Error parsing Excel file: ' + error.message, 'error');
+                        }
+                    };
+                    reader.readAsArrayBuffer(file);
+                } else {
+                    showStatus('Unsupported file format. Please use CSV, TXT, or Excel files.', 'error');
+                }
             }
         });
 
         function parseCSV(csvText) {
             const lines = csvText.trim().split('\n');
-            originalData = lines.map(line => 
-                line.split(',').map(cell => parseFloat(cell.trim()) || 0)
-            );
+            originalData = lines.map(line => {
+                // Handle different delimiters (comma, semicolon, tab)
+                let delimiter = ',';
+                if (line.includes(';') && !line.includes(',')) delimiter = ';';
+                if (line.includes('\t')) delimiter = '\t';
+                
+                return line.split(delimiter).map(cell => {
+                    const value = cell.trim().replace(/['"]/g, ''); // Remove quotes
+                    return parseFloat(value) || 0;
+                });
+            });
             
             gridDimensions.rows = originalData.length;
             gridDimensions.cols = originalData[0].length;
@@ -449,6 +480,27 @@
             
             visualizeOriginalGrid();
             updateProgress(25);
+        }
+
+        function parseExcel(arrayBuffer) {
+            // Simple Excel parser for basic .xlsx files
+            // This is a simplified approach - for production use, consider using SheetJS library
+            try {
+                // Convert to text and try to parse as CSV-like data
+                const uint8Array = new Uint8Array(arrayBuffer);
+                let binaryString = '';
+                for (let i = 0; i < uint8Array.length; i++) {
+                    binaryString += String.fromCharCode(uint8Array[i]);
+                }
+                
+                // This is a basic approach - Excel files are complex binary formats
+                // For better Excel support, you would need the SheetJS library
+                // For now, we'll ask users to save Excel as CSV
+                throw new Error('Excel file detected. Please save your Excel file as CSV format for best compatibility.');
+                
+            } catch (error) {
+                throw new Error('Excel parsing not fully supported. Please convert your Excel file to CSV format.');
+            }
         }
 
         function flattenToSKUs() {
