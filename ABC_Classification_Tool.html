@@ -873,6 +873,8 @@
 }
             // Add this method to your SlottingOptimizer class, right after displaySKUDistribution()
 
+// Add these methods after displaySKUDistribution() method:
+
 displayOptimizationResults() {
     const stats = document.getElementById('optimizationStats');
     
@@ -911,7 +913,6 @@ displayOptimizationResults() {
     `;
 }
 
-// Also add this helper method
 calculateAverageDistanceByClass(className) {
     const classItems = this.skuData.filter(sku => sku.abcClass === className && sku.assignedRow >= 0);
     if (classItems.length === 0) return 0;
@@ -922,4 +923,213 @@ calculateAverageDistanceByClass(className) {
     }, 0);
     
     return totalDistance / classItems.length;
+}
+
+displayParetoChart() {
+    const ctx = document.getElementById('paretoChart').getContext('2d');
+    
+    // Prepare data for chart - top 20 SKUs
+    const topSKUs = this.skuData.slice(0, 20);
+    const labels = topSKUs.map(sku => sku.id);
+    const frequencies = topSKUs.map(sku => sku.frequency);
+    const cumulativePercentages = topSKUs.map(sku => sku.cumulativePercentage);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Frequency',
+                data: frequencies,
+                backgroundColor: 'rgba(79, 70, 229, 0.6)',
+                borderColor: 'rgba(79, 70, 229, 1)',
+                borderWidth: 1,
+                yAxisID: 'y'
+            }, {
+                label: 'Cumulative %',
+                data: cumulativePercentages,
+                type: 'line',
+                borderColor: 'rgba(239, 68, 68, 1)',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                borderWidth: 2,
+                fill: false,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Frequency'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Cumulative %'
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                    max: 100
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Top 20 SKUs - Pareto Analysis'
+                }
+            }
+        }
+    });
+}
+
+displayGrids() {
+    this.displayOriginalGrid();
+    this.displayOptimizedGrid();
+}
+
+displayOriginalGrid() {
+    const container = document.getElementById('originalGrid');
+    const table = document.createElement('table');
+    table.className = 'grid';
+    
+    for (let row = 0; row < this.originalData.length; row++) {
+        const tr = document.createElement('tr');
+        for (let col = 0; col < this.originalData[row].length; col++) {
+            const td = document.createElement('td');
+            const value = this.originalData[row][col];
+            
+            // Color based on frequency
+            if (row === this.dockPosition.row && col === this.dockPosition.col) {
+                td.className = 'dock';
+                td.textContent = 'DOCK';
+            } else if (this.obstacles.some(obs => obs.row === row && obs.col === col)) {
+                td.className = 'obstacle';
+                td.textContent = 'X';
+            } else {
+                td.textContent = value || '0';
+                // Color based on frequency intensity
+                if (value > 0) {
+                    const intensity = Math.min(value / Math.max(...this.originalData.flat()), 1);
+                    td.style.backgroundColor = `rgba(79, 70, 229, ${0.1 + intensity * 0.4})`;
+                }
+            }
+            tr.appendChild(td);
+        }
+        table.appendChild(tr);
+    }
+    
+    container.innerHTML = '';
+    container.appendChild(table);
+}
+
+displayOptimizedGrid() {
+    const container = document.getElementById('optimizedGrid');
+    const table = document.createElement('table');
+    table.className = 'grid';
+    
+    for (let row = 0; row < this.optimizedLayout.length; row++) {
+        const tr = document.createElement('tr');
+        for (let col = 0; col < this.optimizedLayout[row].length; col++) {
+            const td = document.createElement('td');
+            const cell = this.optimizedLayout[row][col];
+            
+            if (cell === 'DOCK') {
+                td.className = 'dock';
+                td.textContent = 'DOCK';
+            } else if (cell === 'OBSTACLE') {
+                td.className = 'obstacle';
+                td.textContent = 'X';
+            } else if (cell && cell.abcClass) {
+                td.className = `sku-${cell.abcClass.toLowerCase()}`;
+                td.textContent = cell.frequency;
+                td.title = `${cell.id} - Class ${cell.abcClass} - Freq: ${cell.frequency}`;
+            } else {
+                td.textContent = '';
+                td.style.backgroundColor = '#f9f9f9';
+            }
+            
+            tr.appendChild(td);
+        }
+        table.appendChild(tr);
+    }
+    
+    container.innerHTML = '';
+    container.appendChild(table);
+}
+
+downloadCSV() {
+    const csvData = [];
+    csvData.push(['SKU_ID', 'Original_Row', 'Original_Col', 'Optimized_Row', 'Optimized_Col', 'Frequency', 'ABC_Class', 'Distance_From_Dock']);
+    
+    this.skuData.forEach(sku => {
+        const distance = sku.assignedRow >= 0 ? 
+            Math.abs(sku.assignedRow - this.dockPosition.row) + Math.abs(sku.assignedCol - this.dockPosition.col) : 'N/A';
+        
+        csvData.push([
+            sku.id,
+            sku.originalRow,
+            sku.originalCol,
+            sku.assignedRow >= 0 ? sku.assignedRow : 'Unassigned',
+            sku.assignedCol >= 0 ? sku.assignedCol : 'Unassigned',
+            sku.frequency,
+            sku.abcClass,
+            distance
+        ]);
+    });
+    
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'optimized_layout.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+downloadReport() {
+    const totalSKUs = this.skuData.length;
+    const totalPicks = this.skuData.reduce((sum, sku) => sum + sku.frequency, 0);
+    const classA = this.skuData.filter(sku => sku.abcClass === 'A').length;
+    const classB = this.skuData.filter(sku => sku.abcClass === 'B').length;
+    const classC = this.skuData.filter(sku => sku.abcClass === 'C').length;
+    
+    const report = `
+WAREHOUSE SLOTTING OPTIMIZATION REPORT
+=====================================
+
+Grid Information:
+- Grid Size: ${this.originalData.length} × ${this.originalData[0].length}
+- Total SKUs: ${totalSKUs}
+- Total Picks: ${totalPicks.toLocaleString()}
+- Dock Position: (${this.dockPosition.row}, ${this.dockPosition.col})
+- Obstacles: ${this.obstacles.length}
+
+ABC Classification:
+- Class A: ${classA} SKUs (${((classA/totalSKUs)*100).toFixed(1)}%)
+- Class B: ${classB} SKUs (${((classB/totalSKUs)*100).toFixed(1)}%)
+- Class C: ${classC} SKUs (${((classC/totalSKUs)*100).toFixed(1)}%)
+
+Strategy Used: ${this.strategy.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+
+Generated on: ${new Date().toLocaleString()}
+    `.trim();
+    
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'slotting_analysis_report.txt';
+    a.click();
+    window.URL.revokeObjectURL(url);
 }
