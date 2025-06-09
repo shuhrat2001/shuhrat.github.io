@@ -849,17 +849,25 @@
                 `;
             }
 
-            displaySKUDistribution() {
-                const stats = document.getElementById('skuStats');
-                const classA = this.skuData.filter(sku => sku.abcClass === 'A').length;
-                const classB = this.skuData.filter(sku => sku.abcClass === 'B').length;
-                const classC = this.skuData.filter(sku => sku.abcClass === 'C').length;
-                
-                const classAFreq = this.skuData.filter(sku => sku.abcClass === 'A')
-                    .reduce((sum, sku) => sum + sku.frequency, 0);
-                const classBFreq = this.skuData.filter(sku => sku.abcClass === 'B')
-                    .reduce((sum, sku) => sum + sku.frequency, 0);
-                const classCFreq = this.skuData.filter(sku => sku.abcClass === 'C')
-                    .reduce((sum, sku) => sum + sku.frequency, 0);
-                
-                stats.innerHTML = `
+           displaySKUDistribution() {
+    const stats = document.getElementById('skuStats');
+    const classA = this.skuData.filter(sku => sku.abcClass === 'A').length;
+    const classB = this.skuData.filter(sku => sku.abcClass === 'B').length;
+    const classC = this.skuData.filter(sku => sku.abcClass === 'C').length;
+    
+    const classAFreq = this.skuData.filter(sku => sku.abcClass === 'A')
+        .reduce((sum, sku) => sum + sku.frequency, 0);
+    const classBFreq = this.skuData.filter(sku => sku.abcClass === 'B')
+        .reduce((sum, sku) => sum + sku.frequency, 0);
+    const classCFreq = this.skuData.filter(sku => sku.abcClass === 'C')
+        .reduce((sum, sku) => sum + sku.frequency, 0);
+    
+    stats.innerHTML = `
+        <div class="stat-item"><span>Class A SKUs:</span><span>${classA} (${((classA/this.skuData.length)*100).toFixed(1)}%)</span></div>
+        <div class="stat-item"><span>Class B SKUs:</span><span>${classB} (${((classB/this.skuData.length)*100).toFixed(1)}%)</span></div>
+        <div class="stat-item"><span>Class C SKUs:</span><span>${classC} (${((classC/this.skuData.length)*100).toFixed(1)}%)</span></div>
+        <div class="stat-item"><span>Class A Picks:</span><span>${classAFreq.toLocaleString()}</span></div>
+        <div class="stat-item"><span>Class B Picks:</span><span>${classBFreq.toLocaleString()}</span></div>
+        <div class="stat-item"><span>Class C Picks:</span><span>${classCFreq.toLocaleString()}</span></div>
+    `;
+}
