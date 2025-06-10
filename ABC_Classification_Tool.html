@@ -313,6 +313,51 @@
             return Math.abs(pos1.row - pos2.row) + Math.abs(pos1.col - pos2.col);
         }
 
+        function displayStats(totalRows, totalCols, totalSKUs, docksCount, obstaclesCount) {
+            const statsDiv = document.getElementById('statsContainer');
+            const totalCells = totalRows * totalCols;
+            const availableCells = totalCells - docksCount - obstaclesCount;
+            
+            statsDiv.innerHTML = `
+                <div class="stats-container">
+                    <div class="stat-item">
+                        <span class="stat-number">${totalRows} × ${totalCols}</span>
+                        <span class="stat-label">Grid Dimensions</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${totalCells}</span>
+                        <span class="stat-label">Total Cells</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${totalSKUs}</span>
+                        <span class="stat-label">Total SKUs</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${docksCount}</span>
+                        <span class="stat-label">Docks</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${obstaclesCount}</span>
+                        <span class="stat-label">Obstacles</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${availableCells}</span>
+                        <span class="stat-label">Available Cells</span>
+                    </div>
+                </div>
+            `;
+            
+            // Show warning if SKUs exceed available cells
+            if (totalSKUs > availableCells) {
+                statsDiv.innerHTML += `
+                    <div class="validation-error">
+                        ⚠️ Warning: You have ${totalSKUs} SKUs but only ${availableCells} available cells. 
+                        ${totalSKUs - availableCells} SKUs cannot be placed.
+                    </div>
+                `;
+            }
+        }
+
         function findClosestDock(row, col) {
             let minDistance = Infinity;
             for (const dock of docks) {
