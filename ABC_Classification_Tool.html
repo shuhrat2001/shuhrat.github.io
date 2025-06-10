@@ -95,7 +95,7 @@
             word-wrap: break-word;
         }
         .dock {
-            background-color: #e74c3c;
+            background-color: #7f8c8d;
             color: white;
         }
         .obstacle {
@@ -107,11 +107,11 @@
             color: white;
         }
         .class-b {
-            background-color: #f39c12;
+            background-color: #e74c3c;
             color: white;
         }
         .class-c {
-            background-color: #e67e22;
+            background-color: #3498db;
             color: white;
         }
         .results {
@@ -161,10 +161,27 @@
             align-items: center;
             gap: 5px;
         }
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 3px;
+        .stats-container {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
         }
     </style>
 </head>
@@ -176,6 +193,17 @@
             <div class="input-group">
                 <label for="csvFile">Upload CSV File:</label>
                 <input type="file" id="csvFile" accept=".csv" />
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="input-group">
+                    <label for="totalRows">Total Rows:</label>
+                    <input type="number" id="totalRows" placeholder="e.g., 5" min="1" />
+                </div>
+                <div class="input-group">
+                    <label for="totalCols">Total Columns:</label>
+                    <input type="number" id="totalCols" placeholder="e.g., 8" min="1" />
+                </div>
             </div>
             
             <div class="input-group">
@@ -193,26 +221,23 @@
         </div>
 
         <div id="messages"></div>
+        <div id="statsContainer"></div>
         
         <div class="legend">
             <div class="legend-item">
-                <div class="legend-color dock"></div>
-                <span>Dock</span>
+                <div class="legend-color" style="background-color: #7f8c8d;"></div>
+                <span>Dock/Obstacle</span>
             </div>
             <div class="legend-item">
-                <div class="legend-color obstacle"></div>
-                <span>Obstacle</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color class-a"></div>
+                <div class="legend-color" style="background-color: #2ecc71;"></div>
                 <span>Class A (Top 20%)</span>
             </div>
             <div class="legend-item">
-                <div class="legend-color class-b"></div>
+                <div class="legend-color" style="background-color: #e74c3c;"></div>
                 <span>Class B (Next 30%)</span>
             </div>
             <div class="legend-item">
-                <div class="legend-color class-c"></div>
+                <div class="legend-color" style="background-color: #3498db;"></div>
                 <span>Class C (Remaining 50%)</span>
             </div>
         </div>
@@ -247,6 +272,41 @@
             return lines.map(line => 
                 line.split(',').map(cell => cell.trim().replace(/"/g, ''))
             );
+        }
+
+        function validateInputs(totalRows, totalCols, docks, obstacles) {
+            const errors = [];
+            
+            // Check if dimensions are provided
+            if (!totalRows || !totalCols) {
+                errors.push("Please specify both total rows and total columns.");
+                return errors;
+            }
+            
+            // Validate dock locations
+            for (const dock of docks) {
+                if (dock.row < 0 || dock.row >= totalRows || dock.col < 0 || dock.col >= totalCols) {
+                    errors.push(`Dock at (${dock.row},${dock.col}) is outside grid bounds (${totalRows}x${totalCols}).`);
+                }
+            }
+            
+            // Validate obstacle locations
+            for (const obstacle of obstacles) {
+                if (obstacle.row < 0 || obstacle.row >= totalRows || obstacle.col < 0 || obstacle.col >= totalCols) {
+                    errors.push(`Obstacle at (${obstacle.row},${obstacle.col}) is outside grid bounds (${totalRows}x${totalCols}).`);
+                }
+            }
+            
+            // Check for overlapping dock and obstacle locations
+            for (const dock of docks) {
+                for (const obstacle of obstacles) {
+                    if (dock.row === obstacle.row && dock.col === obstacle.col) {
+                        errors.push(`Location (${dock.row},${dock.col}) cannot be both dock and obstacle.`);
+                    }
+                }
+            }
+            
+            return errors;
         }
 
         function manhattanDistance(pos1, pos2) {
@@ -389,14 +449,16 @@
             
             resultsDiv.innerHTML = 
                 createClassList(classA, 'A', '#2ecc71') +
-                createClassList(classB, 'B', '#f39c12') +
-                createClassList(classC, 'C', '#e67e22');
+                createClassList(classB, 'B', '#e74c3c') +
+                createClassList(classC, 'C', '#3498db');
         }
 
         function processWarehouse() {
             const fileInput = document.getElementById('csvFile');
             const dockInput = document.getElementById('dockInput').value;
             const obstacleInput = document.getElementById('obstacleInput').value;
+            const totalRows = parseInt(document.getElementById('totalRows').value);
+            const totalCols = parseInt(document.getElementById('totalCols').value);
 
             if (!fileInput.files[0]) {
                 showMessage('Please select a CSV file.');
@@ -420,21 +482,54 @@
                         return;
                     }
 
+                    // Validate inputs
+                    const validationErrors = validateInputs(totalRows, totalCols, docks, obstacles);
+                    if (validationErrors.length > 0) {
+                        showMessage(validationErrors.join('<br>'));
+                        return;
+                    }
+
+                    // Create grid based on specified dimensions if different from CSV
+                    if (originalGrid.length !== totalRows || originalGrid[0].length !== totalCols) {
+                        // Resize grid to match specified dimensions
+                        const newGrid = [];
+                        for (let row = 0; row < totalRows; row++) {
+                            newGrid[row] = [];
+                            for (let col = 0; col < totalCols; col++) {
+                                if (row < originalGrid.length && col < originalGrid[row].length) {
+                                    newGrid[row][col] = originalGrid[row][col];
+                                } else {
+                                    newGrid[row][col] = '0'; // Default to 0 picks for empty cells
+                                }
+                            }
+                        }
+                        originalGrid = newGrid;
+                    }
+
                     // Extract SKU data
                     skuData = [];
                     let skuCounter = 0;
 
+                    // First pass: mark docks and obstacles
                     for (let row = 0; row < originalGrid.length; row++) {
                         for (let col = 0; col < originalGrid[row].length; col++) {
-                            const cell = originalGrid[row][col];
                             const isDock = docks.some(d => d.row === row && d.col === col);
                             const isObstacle = obstacles.some(o => o.row === row && o.col === col);
 
-                            if (cell === 'dock' || isDock) {
+                            if (isDock) {
                                 originalGrid[row][col] = 'dock';
-                            } else if (cell === 'obstacle' || isObstacle) {
+                            } else if (isObstacle) {
                                 originalGrid[row][col] = 'obstacle';
-                            } else {
+                            }
+                        }
+                    }
+
+                    // Second pass: assign SKUs to remaining cells
+                    for (let row = 0; row < originalGrid.length; row++) {
+                        for (let col = 0; col < originalGrid[row].length; col++) {
+                            const cell = originalGrid[row][col];
+                            
+                            if (cell !== 'dock' && cell !== 'obstacle') {
                                 const picks = parseFloat(cell) || 0;
                                 const skuName = `SKU${skuCounter}`;
                                 skuData.push({
@@ -448,6 +543,14 @@
                             }
                         }
                     }
+
+                    // Debug: Log SKU data to check counting
+                    console.log(`Total SKUs created: ${skuData.length}`);
+                    console.log('SKU names:', skuData.map(sku => sku.name));
+                    console.log('Last SKU:', skuData[skuData.length - 1]?.name);
+
+                    // Display statistics
+                    displayStats(totalRows, totalCols, skuData.length, docks.length, obstacles.length);
 
                     // Optimize layout
                     const { classA, classB, classC } = optimizeLayout();
